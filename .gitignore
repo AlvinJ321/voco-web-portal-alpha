@@ -1,0 +1,44 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.env
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Server-specific
+server/.env
+server/voco_app.sqlite 
+# If you plan to store the SQLite DB in the project, 
+# but usually you might want it in .gitignore if it's just for local dev/testing 
+# and production uses a managed DB. For now, adding it.
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# deployment files
+deployment/
