@@ -18,10 +18,13 @@ const TranscriptionRecord = require('./models/TranscriptionRecord');
 // Load environment variables (ensure .env file is set up with JWT_SECRET)
 require('dotenv').config(); 
 
+const IS_PROD = process.env.NODE_ENV === 'production';
+
 const config = new OpenApi.Config({
   accessKeyId: process.env.ALIYUN_ACCESS_KEY_ID,
   accessKeySecret: process.env.ALIYUN_ACCESS_KEY_SECRET,
-  endpoint: 'dysmsapi.aliyuncs.com',
+  // Use regional endpoint. In production, traffic from an ECS in the same region is routed internally.
+  endpoint: IS_PROD ? 'dysmsapi.cn-shanghai.aliyuncs.com' : 'dysmsapi.aliyuncs.com',
 });
 const client = new Dysmsapi.default(config);
 
@@ -30,6 +33,8 @@ const ossClient = new OSS({
   accessKeyId: process.env.ALIYUN_ACCESS_KEY_ID,
   accessKeySecret: process.env.ALIYUN_ACCESS_KEY_SECRET,
   bucket: process.env.ALIYUN_OSS_BUCKET,
+  // Use internal endpoint in production for security and performance
+  internal: IS_PROD,
 });
 
 const app = express();
@@ -75,6 +80,8 @@ async function getAsrAccessToken() {
     const client = new RPCClient({
       accessKeyId: process.env.ALIYUN_ACCESS_KEY_ID,
       accessKeySecret: process.env.ALIYUN_ACCESS_KEY_SECRET,
+      // This is the regional endpoint for the token service.
+      // When called from an ECS in the same region (cn-shanghai), this request will be routed over the internal network.
       endpoint: 'https://nls-meta.cn-shanghai.aliyuncs.com',
       apiVersion: '2019-02-28',
     });
@@ -284,7 +291,12 @@ async function initializeAndStartServer() {
       try {
         const token = await getAsrAccessToken();
         const audioData = req.body;
-        const fullUrl = `https://nls-gateway.cn-shanghai.aliyuncs.com/stream/v1/asr?appkey=${ALIYUN_ASR_APP_KEY}&format=wav&sample_rate=16000&enable_punctuation_prediction=true&enable_inverse_text_normalization=true`;
+
+        // Select Aliyun endpoint based on environment
+        const asrEndpoint = IS_PROD
+          ? 'http://nls-gateway-cn-shanghai-internal.aliyuncs.com'
+          : 'https://nls-gateway.cn-shanghai.aliyuncs.com';
+        const fullUrl = `${asrEndpoint}/stream/v1/asr?appkey=${ALIYUN_ASR_APP_KEY}&format=wav&sample_rate=16000&enable_punctuation_prediction=true&enable_inverse_text_normalization=true`;
 
         const aliyunResponse = await axios.post(fullUrl, audioData, {
           headers: {
