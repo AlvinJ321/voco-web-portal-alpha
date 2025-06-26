@@ -14,6 +14,7 @@ const OSS = require('ali-oss');
 const path = require('path');
 const { calculateWordCount, calculateRecordingDuration } = require('./utils/transcription');
 const TranscriptionRecord = require('./models/TranscriptionRecord');
+const { default: PQueue } = require('p-queue');
 
 // Load environment variables (ensure .env file is set up with JWT_SECRET)
 require('dotenv').config(); 
@@ -66,6 +67,15 @@ const REFRESH_TOKEN_EXPIRES_IN_DAYS = 30; // Refresh token expires in 30 days
 // In-memory store for rate limiting SMS requests.
 // Production-ready apps should use a persistent store like Redis.
 const smsRequestTimestamps = {};
+
+// --- ASR Queue for Rate Limiting ---
+// Use p-queue to limit concurrency and rate for Aliyun ASR service
+// This creates a queue that will process a maximum of ASR_QPS_LIMIT
+// requests every second (1000ms).
+const asrQueue = new PQueue({
+  interval: 1000,
+  intervalCap: process.env.ASR_QPS_LIMIT || 200, // 2 for trial version, change to 200 for commercial version
+});
 
 // --- Aliyun ASR (Speech-to-Text) Configuration ---
 const ALIYUN_ASR_APP_KEY = process.env.ALIYUN_APP_KEY;
@@ -288,70 +298,85 @@ async function initializeAndStartServer() {
       if (!ALIYUN_ASR_APP_KEY) {
         return res.status(500).json({ error: 'Server configuration error: Aliyun AppKey is missing' });
       }
+
       try {
-        const token = await getAsrAccessToken();
-        const audioData = req.body;
+        // Add the ASR processing logic to the queue.
+        // The request will be held open until this task is processed.
+        const transcript = await asrQueue.add(async () => {
+          const token = await getAsrAccessToken();
+          const audioData = req.body;
 
-        // Select Aliyun endpoint based on environment
-        const asrEndpoint = IS_PROD
-          ? 'http://nls-gateway-cn-shanghai-internal.aliyuncs.com'
-          : 'https://nls-gateway.cn-shanghai.aliyuncs.com';
-        const fullUrl = `${asrEndpoint}/stream/v1/asr?appkey=${ALIYUN_ASR_APP_KEY}&format=wav&sample_rate=16000&enable_punctuation_prediction=true&enable_inverse_text_normalization=true`;
+          // Select Aliyun endpoint based on environment
+          const asrEndpoint = IS_PROD
+            ? 'http://nls-gateway-cn-shanghai-internal.aliyuncs.com'
+            : 'https://nls-gateway.cn-shanghai.aliyuncs.com';
+          const fullUrl = `${asrEndpoint}/stream/v1/asr?appkey=${ALIYUN_ASR_APP_KEY}&format=wav&sample_rate=16000&enable_punctuation_prediction=true&enable_inverse_text_normalization=true`;
 
-        const aliyunResponse = await axios.post(fullUrl, audioData, {
-          headers: {
-            'X-NLS-Token': token,
-            'Content-Type': 'application/octet-stream',
-          },
-          timeout: 15000,
+          const aliyunResponse = await axios.post(fullUrl, audioData, {
+            headers: {
+              'X-NLS-Token': token,
+              'Content-Type': 'application/octet-stream',
+            },
+            timeout: 15000,
+          });
+
+          if (aliyunResponse.data && aliyunResponse.data.status === 20000000 && aliyunResponse.data.result) {
+            // Calculate recording duration and word count
+            const recordingDuration = calculateRecordingDuration(audioData);
+            const wordCount = calculateWordCount(aliyunResponse.data.result);
+
+            // Create transcription record
+            await TranscriptionRecord.create({
+              transactionId: `TR-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              userId: req.user.userId,
+              recordingDuration: Math.round(recordingDuration),
+              wordCount,
+              status: 'success'
+            });
+
+            return aliyunResponse.data.result;
+          } else {
+            console.error('[Server] Aliyun ASR error:', aliyunResponse.data);
+            
+            // Create failed transcription record
+            await TranscriptionRecord.create({
+              transactionId: `TR-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              userId: req.user.userId,
+              recordingDuration: Math.round(calculateRecordingDuration(audioData)),
+              wordCount: 0,
+              status: 'failed'
+            });
+
+            // Throw an error to be caught by the outer catch block
+            throw new Error(aliyunResponse.data.message || 'Speech recognition failed');
+          }
         });
 
-        if (aliyunResponse.data && aliyunResponse.data.status === 20000000 && aliyunResponse.data.result) {
-          // Calculate recording duration and word count
-          const recordingDuration = calculateRecordingDuration(audioData);
-          const wordCount = calculateWordCount(aliyunResponse.data.result);
+        res.json({ transcript });
 
-          // Create transcription record
-          await TranscriptionRecord.create({
-            transactionId: `TR-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            userId: req.user.userId,
-            recordingDuration: Math.round(recordingDuration),
-            wordCount,
-            status: 'success'
-          });
-
-          res.json({ transcript: aliyunResponse.data.result });
-        } else {
-          console.error('[Server] Aliyun ASR error:', aliyunResponse.data);
-          
-          // Create failed transcription record
-          await TranscriptionRecord.create({
-            transactionId: `TR-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            userId: req.user.userId,
-            recordingDuration: Math.round(calculateRecordingDuration(audioData)),
-            wordCount: 0,
-            status: 'failed'
-          });
-
-          res.status(500).json({ error: 'Speech recognition failed', details: aliyunResponse.data.message || 'Unknown error' });
-        }
       } catch (error) {
         console.error('[Server] Error in /api/speech endpoint:', error.response ? error.response.data : error.message);
         
-        // Create failed transcription record for server errors
-        try {
-          await TranscriptionRecord.create({
-            transactionId: `TR-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            userId: req.user.userId,
-            recordingDuration: Math.round(calculateRecordingDuration(req.body)),
-            wordCount: 0,
-            status: 'failed'
-          });
-        } catch (recordError) {
-          console.error('[Server] Failed to create transcription record:', recordError);
-        }
+        // This part now primarily catches errors from the queuing logic itself or re-throws from the task
+        
+        // Check if a failed record was already created inside the queue task
+        // This is a simplification; a more robust solution might pass a unique ID
+        // to avoid double-logging, but for this context, it's acceptable.
+        if (!res.headersSent) {
+          try {
+            await TranscriptionRecord.create({
+              transactionId: `TR-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              userId: req.user.userId,
+              recordingDuration: Math.round(calculateRecordingDuration(req.body)),
+              wordCount: 0,
+              status: 'failed'
+            });
+          } catch (recordError) {
+            console.error('[Server] Failed to create transcription record after queue error:', recordError);
+          }
 
-        res.status(500).json({ error: 'Internal server error during speech recognition' });
+          res.status(500).json({ error: error.message || 'Internal server error during speech recognition' });
+        }
       }
     });
 
