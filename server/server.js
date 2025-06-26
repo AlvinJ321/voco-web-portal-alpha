@@ -22,8 +22,8 @@ require('dotenv').config();
 const IS_PROD = process.env.NODE_ENV === 'production';
 
 const config = new OpenApi.Config({
-  accessKeyId: process.env.ALIYUN_ACCESS_KEY_ID,
-  accessKeySecret: process.env.ALIYUN_ACCESS_KEY_SECRET,
+  accessKeyId: process.env.ALIYUN_ENTERPRISE_ACCESS_KEY_ID,
+  accessKeySecret: process.env.ALIYUN_ENTERPRISE_ACCESS_KEY_SECRET,
   // Use regional endpoint. In production, traffic from an ECS in the same region is routed internally.
   endpoint: IS_PROD ? 'dysmsapi.cn-shanghai.aliyuncs.com' : 'dysmsapi.aliyuncs.com',
 });
@@ -31,8 +31,8 @@ const client = new Dysmsapi.default(config);
 
 const ossClient = new OSS({
   region: process.env.ALIYUN_OSS_REGION,
-  accessKeyId: process.env.ALIYUN_ACCESS_KEY_ID,
-  accessKeySecret: process.env.ALIYUN_ACCESS_KEY_SECRET,
+  accessKeyId: process.env.ALIYUN_ENTERPRISE_ACCESS_KEY_ID,
+  accessKeySecret: process.env.ALIYUN_ENTERPRISE_ACCESS_KEY_SECRET,
   bucket: process.env.ALIYUN_OSS_BUCKET,
   // Use internal endpoint in production for security and performance
   internal: IS_PROD,
@@ -78,7 +78,7 @@ const asrQueue = new PQueue({
 });
 
 // --- Aliyun ASR (Speech-to-Text) Configuration ---
-const ALIYUN_ASR_APP_KEY = process.env.ALIYUN_APP_KEY;
+const ALIYUN_ASR_APP_KEY = process.env.ALIYUN_ASR_APP_KEY;
 let asrAccessToken = null;
 let asrTokenExpiry = null;
 
@@ -88,8 +88,8 @@ async function getAsrAccessToken() {
   }
   try {
     const client = new RPCClient({
-      accessKeyId: process.env.ALIYUN_ACCESS_KEY_ID,
-      accessKeySecret: process.env.ALIYUN_ACCESS_KEY_SECRET,
+      accessKeyId: process.env.ALIYUN_ASR_ACCESS_KEY_ID,
+      accessKeySecret: process.env.ALIYUN_ASR_ACCESS_KEY_SECRET,
       // This is the regional endpoint for the token service.
       // When called from an ECS in the same region (cn-shanghai), this request will be routed over the internal network.
       endpoint: 'https://nls-meta.cn-shanghai.aliyuncs.com',
