@@ -74,7 +74,7 @@ const smsRequestTimestamps = {};
 // requests every second (1000ms).
 const asrQueue = new PQueue({
   interval: 1000,
-  intervalCap: process.env.ASR_QPS_LIMIT || 200, // 2 for trial version, change to 200 for commercial version
+  intervalCap: parseInt(process.env.ASR_QPS_LIMIT, 10) || 2, // Convert env var to number, default to 2
 });
 
 // --- Aliyun ASR (Speech-to-Text) Configuration ---
