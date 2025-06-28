@@ -310,7 +310,7 @@ async function initializeAndStartServer() {
           const asrEndpoint = IS_PROD
             ? 'http://nls-gateway-cn-shanghai-internal.aliyuncs.com'
             : 'https://nls-gateway.cn-shanghai.aliyuncs.com';
-          const fullUrl = `${asrEndpoint}/stream/v1/asr?appkey=${ALIYUN_ASR_APP_KEY}&format=wav&sample_rate=16000&enable_punctuation_prediction=true&enable_inverse_text_normalization=true`;
+          const fullUrl = `${asrEndpoint}/stream/v1/asr?appkey=${ALIYUN_ASR_APP_KEY}&format=wav&sample_rate=16000&enable_punctuation_prediction=true&enable_inverse_text_normalization=true&enable_voice_detection=true`;
 
           const aliyunResponse = await axios.post(fullUrl, audioData, {
             headers: {
