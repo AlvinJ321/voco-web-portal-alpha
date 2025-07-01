@@ -16,7 +16,10 @@ async function refineText(userId, text) {
 
   const apiKey = process.env.DASHSCOPE_API_KEY;
   const appId = process.env.BAILIAN_APP_ID;
-  const url = `https://dashscope.aliyuncs.com/api/v1/apps/${appId}/completion`;
+  
+  // Use private endpoint from environment variable if available, otherwise default to public endpoint
+  const baseUrl = process.env.DASHSCOPE_API_BASE_URL || 'https://dashscope.aliyuncs.com/api/v1';
+  const url = `${baseUrl}/apps/${appId}/completion`;
 
   let session = userSessions.get(userId);
 
