@@ -161,7 +161,7 @@ function App() {
             一句话说完，自动写进任何输入框
           </p>
           <p className="text-3xl text-gray-800 font-normal">
-            AI自动润色，让表达清晰自然
+            AI润色，让表达清晰自然
           </p>
         </div>
         <div className="flex gap-12 justify-center mb-10">
