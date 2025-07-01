@@ -155,7 +155,7 @@ function App() {
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center text-center min-h-[70vh] w-full">
-        <h1 className="text-7xl font-extrabold text-blue-600 mb-10 leading-tight">用嘴巴打字，比手快3倍</h1>
+        <h1 className="text-7xl font-extrabold text-blue-600 mb-10 leading-tight">你的语音键盘</h1>
         <div className="mb-20">
           <p className="text-3xl text-gray-800 font-normal mb-1">
             一句话说完，自动写进任何输入框
