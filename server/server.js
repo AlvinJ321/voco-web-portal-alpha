@@ -13,6 +13,7 @@ const multer = require('multer');
 const OSS = require('ali-oss');
 const path = require('path');
 const { calculateWordCount, calculateRecordingDuration } = require('./utils/transcription');
+const { refineText } = require('./utils/refiner');
 const TranscriptionRecord = require('./models/TranscriptionRecord');
 const { default: PQueue } = require('p-queue');
 
@@ -321,11 +322,16 @@ async function initializeAndStartServer() {
           });
 
           if (aliyunResponse.data && aliyunResponse.data.status === 20000000 && aliyunResponse.data.result) {
-            // Calculate recording duration and word count
-            const recordingDuration = calculateRecordingDuration(audioData);
-            const wordCount = calculateWordCount(aliyunResponse.data.result);
+            const originalTranscript = aliyunResponse.data.result;
 
-            // Create transcription record
+            // Refine the transcript using the new service
+            const refinedTranscript = await refineText(req.user.userId, originalTranscript);
+            
+            // Calculate recording duration and word count from original transcript
+            const recordingDuration = calculateRecordingDuration(audioData);
+            const wordCount = calculateWordCount(originalTranscript);
+
+            // Create transcription record with original data
             await TranscriptionRecord.create({
               transactionId: `TR-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
               userId: req.user.userId,
@@ -334,7 +340,7 @@ async function initializeAndStartServer() {
               status: 'success'
             });
 
-            return aliyunResponse.data.result;
+            return refinedTranscript; // Return the refined transcript
           } else {
             console.error('[Server] Aliyun ASR error:', aliyunResponse.data);
             
