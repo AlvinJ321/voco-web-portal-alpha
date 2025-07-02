@@ -3,6 +3,10 @@ const axios = require('axios');
 const userSessions = new Map();
 const SESSION_TIMEOUT = 60 * 60 * 1000; // 60 minutes in milliseconds
 
+// All prompt engineering (system prompt, examples, and task structure)
+// is now configured in the Bailian web console. This code is only responsible
+// for forwarding the raw text and managing sessions.
+
 async function refineText(userId, text) {
   // Validate required environment variables from the official documentation
   if (!process.env.DASHSCOPE_API_KEY) {
@@ -32,7 +36,8 @@ async function refineText(userId, text) {
 
   const sessionId = session ? session.sessionId : undefined;
 
-  // Construct the request body as per the API documentation
+  // All prompt engineering is handled by the Bailian platform.
+  // The code only sends the raw text input from the user.
   const requestBody = {
     input: {
       prompt: text,
@@ -40,11 +45,13 @@ async function refineText(userId, text) {
     parameters: {},
   };
 
+  // We still pass the session_id as it might help the model with continuity of subject matter,
+  // even if we're re-supplying the instructions every time.
   if (sessionId) {
     requestBody.session_id = sessionId;
-    console.log(`Continuing session ${sessionId} for user ${userId}`);
+    console.log(`Continuing session ${sessionId} for user ${userId} with raw text.`);
   } else {
-    console.log(`Starting new session for user ${userId}`);
+    console.log(`Starting new session for user ${userId} with raw text.`);
   }
 
   try {
@@ -60,6 +67,10 @@ async function refineText(userId, text) {
     
     // Check for a successful response and valid output
     if (response.status === 200 && responseData.output && responseData.output.text) {
+      // The 'cached_tokens' field is not available in the Application API endpoint response,
+      // so the related logging has been removed. The best way to verify caching is by
+      // checking the cost in the Alibaba Cloud billing console.
+
       const newSessionId = responseData.output.session_id;
       
       // Update session with the new ID and activity time
@@ -70,7 +81,12 @@ async function refineText(userId, text) {
           });
       }
 
-      return responseData.output.text;
+      // Defensively remove quotes and trim whitespace from the output.
+      let resultText = responseData.output.text.trim();
+      if (resultText.startsWith('"') && resultText.endsWith('"')) {
+        resultText = resultText.substring(1, resultText.length - 1);
+      }
+      return resultText;
     } else {
       console.error('DashScope API returned an unexpected response:', responseData);
       return text; // Fallback to original text
