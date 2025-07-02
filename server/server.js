@@ -296,6 +296,8 @@ async function initializeAndStartServer() {
     // --- Aliyun ASR (Speech-to-Text) Endpoint ---
     app.post('/api/speech', authenticateToken, async (req, res) => {
       console.log('[Server] Received audio data, size:', req.body.length);
+      const shouldRefine = req.query.refine === 'true';
+
       if (!ALIYUN_ASR_APP_KEY) {
         return res.status(500).json({ error: 'Server configuration error: Aliyun AppKey is missing' });
       }
@@ -324,8 +326,12 @@ async function initializeAndStartServer() {
           if (aliyunResponse.data && aliyunResponse.data.status === 20000000 && aliyunResponse.data.result) {
             const originalTranscript = aliyunResponse.data.result;
 
-            // Refine the transcript using the new service
-            const refinedTranscript = await refineText(req.user.userId, originalTranscript);
+            let transcriptToReturn = originalTranscript;
+            if (shouldRefine) {
+              // Refine the transcript using the new service
+              console.log('[Server] Refining transcript for user:', req.user.userId);
+              transcriptToReturn = await refineText(req.user.userId, originalTranscript);
+            }
             
             // Calculate recording duration and word count from original transcript
             const recordingDuration = calculateRecordingDuration(audioData);
@@ -340,7 +346,7 @@ async function initializeAndStartServer() {
               status: 'success'
             });
 
-            return refinedTranscript; // Return the refined transcript
+            return transcriptToReturn; // Return the original or refined transcript
           } else {
             console.error('[Server] Aliyun ASR error:', aliyunResponse.data);
             
