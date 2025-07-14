@@ -283,6 +283,22 @@ async function initializeAndStartServer() {
       }
     });
 
+    // --- Secure Download Endpoint ---
+    app.get('/api/download/mac', authenticateToken, (req, res) => {
+      const filePath = path.join(__dirname, 'downloads', 'Voco.dmg');
+      
+      // Use res.download to handle setting headers and streaming the file
+      res.download(filePath, 'Voco.dmg', (err) => {
+        if (err) {
+          // It's important to handle errors, e.g., file not found
+          console.error('Error downloading file:', err);
+          if (!res.headersSent) {
+            res.status(404).send({ message: 'File not found or error during download.' });
+          }
+        }
+      });
+    });
+
     // --- Aliyun ASR (Speech-to-Text) Endpoint ---
     app.post('/api/speech', authenticateToken, async (req, res) => {
       console.log('[Server] Received audio data, size:', req.body.length);
