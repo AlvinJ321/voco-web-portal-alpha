@@ -9,7 +9,7 @@ const IS_PROD = process.env.NODE_ENV === 'production';
 const config = new OpenApi.Config({
   accessKeyId: process.env.ALIYUN_ENTERPRISE_ACCESS_KEY_ID,
   accessKeySecret: process.env.ALIYUN_ENTERPRISE_ACCESS_KEY_SECRET,
-  endpoint: IS_PROD ? 'dysmsapi.cn-shanghai.aliyuncs.com' : 'dysmsapi.aliyuncs.com',
+  endpoint: process.env.ALIYUN_SMS_ENDPOINT || 'dysmsapi.aliyuncs.com',
 });
 const client = new Dysmsapi.default(config);
 
