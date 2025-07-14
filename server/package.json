@@ -11,7 +11,6 @@
   "description": "",
   "dependencies": {
     "@alicloud/dysmsapi20170525": "^2.0.24",
-    "@alicloud/nls-filetrans-2018-08-17": "^1.1.0",
     "@alicloud/openapi-client": "^0.4.8",
     "@alicloud/pop-core": "^1.7.13",
     "@alicloud/tea-util": "^1.4.5",

@@ -4,9 +4,6 @@ const sequelize = require('./database'); // Your Sequelize instance
 const User = require('./models/User'); // Your User model
 const jwt = require('jsonwebtoken'); // Import jsonwebtoken
 const crypto = require('crypto'); // For generating refresh token
-const Dysmsapi = require('@alicloud/dysmsapi20170525');
-const OpenApi = require('@alicloud/openapi-client');
-const Util = require('@alicloud/tea-util');
 const axios = require('axios'); // For Aliyun ASR
 const RPCClient = require('@alicloud/pop-core'); // For Aliyun ASR Token
 const multer = require('multer');
@@ -14,6 +11,7 @@ const OSS = require('ali-oss');
 const path = require('path');
 const { calculateWordCount, calculateRecordingDuration } = require('./utils/transcription');
 const { refineText } = require('./utils/refiner');
+const { sendVerificationSms } = require('./utils/sms');
 const TranscriptionRecord = require('./models/TranscriptionRecord');
 const { default: PQueue } = require('p-queue');
 
@@ -21,14 +19,6 @@ const { default: PQueue } = require('p-queue');
 require('dotenv').config(); 
 
 const IS_PROD = process.env.NODE_ENV === 'production';
-
-const config = new OpenApi.Config({
-  accessKeyId: process.env.ALIYUN_ENTERPRISE_ACCESS_KEY_ID,
-  accessKeySecret: process.env.ALIYUN_ENTERPRISE_ACCESS_KEY_SECRET,
-  // Use regional endpoint. In production, traffic from an ECS in the same region is routed internally.
-  endpoint: IS_PROD ? 'dysmsapi.cn-shanghai.aliyuncs.com' : 'dysmsapi.aliyuncs.com',
-});
-const client = new Dysmsapi.default(config);
 
 const ossClient = new OSS({
   region: process.env.ALIYUN_OSS_REGION,
@@ -427,27 +417,9 @@ async function initializeAndStartServer() {
         }
 
         const verificationCode = generateVerificationCode();
-        const verificationCodeExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // Expires in 10 minutes
+        const verificationCodeExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-        // --- Mocking SMS sending for development to avoid costs ---
-        // We use MOCK_SMS env var to temporarily bypass real SMS sending for testing in production
-        if (process.env.NODE_ENV === 'development' || process.env.MOCK_SMS === 'true') {
-          console.log(`MOCK SMS MODE: Verification code for ${phoneNumber} is: ${verificationCode}`);
-        } else {
-          // --- Real Aliyun SMS Sending ---
-          const sendSmsRequest = new Dysmsapi.SendSmsRequest({
-            phoneNumbers: phoneNumber,
-            signName: "阿里云短信测试", // Replace with your actual SignName
-            templateCode: "SMS_154950909", // Replace with your actual TemplateCode
-            templateParam: `{"code":"${verificationCode}"}`,
-          });
-          const runtime = new Util.RuntimeOptions({
-            readTimeout: 10000,
-            connectTimeout: 10000,
-          });
-          await client.sendSmsWithOptions(sendSmsRequest, runtime);
-          console.log(`Successfully sent SMS to ${phoneNumber}`);
-        }
+        await sendVerificationSms(phoneNumber, verificationCode);
 
         if (user) {
           // Update existing user's verification code and expiry
