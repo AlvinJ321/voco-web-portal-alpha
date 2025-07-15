@@ -47,3 +47,6 @@ Thumbs.db
 
 # deployment files
 deployment/
+
+# remove Voco.dmg file from git repo
+server/downloads/

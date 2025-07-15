@@ -7,20 +7,28 @@ WORKDIR /usr/src/app
 # Copy package.json and package-lock.json to the working directory
 COPY package*.json ./
 
-# Install any needed packages specified in package.json
-RUN npm install
+# Install only production dependencies to create a smaller and more secure image
+RUN npm install --only=production
 
-# Copy the rest of the application's code to the working directory
-COPY . .
+# Copy the application's code to the working directory.
+# By being explicit, we avoid issues with .dockerignore and create a more reliable build.
+COPY server.js .
+COPY database.js .
+COPY config ./config
+COPY migrations ./migrations
+COPY models ./models
+COPY seeders ./seeders
+COPY utils ./utils
+
+# This is the crucial step: explicitly copy the downloads directory.
+# This directory is created on the host by your deployment script before the build.
+COPY downloads ./downloads
 
 # Make port 3001 available to the world outside this container
 EXPOSE 3001
 
 # Define environment variables
-# These should be passed in when running the container
 ENV NODE_ENV=production
-# ENV PORT=3001 # This is good practice but EXPOSE already handles the port.
-# Other ENV variables like DATABASE_URL, JWT_SECRET, etc., will be passed via the `docker run` command or ECS task definition.
 
 # Run server.js when the container launches
-CMD [ "node", "server.js" ] 
+CMD [ "node", "server.js" ]
