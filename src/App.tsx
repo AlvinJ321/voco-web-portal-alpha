@@ -40,11 +40,25 @@ function App() {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      setIsAuthenticated(true);
-      fetchUserProfile();
-    }
+    // Check if user is authenticated by trying to fetch profile
+    // This is more reliable than checking for a token that might be expired
+    const checkAuthStatus = async () => {
+      try {
+        const response = await apiFetch('/profile');
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+          setUser(null);
+        }
+      } catch (error) {
+        setIsAuthenticated(false);
+        setUser(null);
+      }
+    };
+    checkAuthStatus();
   }, []);
 
   const openAuthModal = (mode: 'login' | 'signup') => {
@@ -59,74 +73,36 @@ function App() {
     }
 
     if (os === 'mac') {
-      try {
-        const response = await apiFetch('/download/mac', {
-          method: 'GET',
-        });
-
-        if (response.ok) {
-          // The browser will handle the download automatically.
-          // We need to get the blob from the response and create a URL for it.
-          const blob = await response.blob();
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          // Extract filename from content-disposition header if available, otherwise fallback
-          const disposition = response.headers.get('content-disposition');
-          let filename = 'Voco.dmg';
-          if (disposition && disposition.indexOf('attachment') !== -1) {
-            const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
-            const matches = filenameRegex.exec(disposition);
-            if (matches != null && matches[1]) {
-              filename = matches[1].replace(/['"]/g, '');
-            }
-          }
-          link.setAttribute('download', filename);
-          document.body.appendChild(link);
-          link.click();
-          link.parentNode?.removeChild(link);
-          window.URL.revokeObjectURL(url);
-        } else {
-          console.error('Download failed:', response.statusText);
-          // Optionally, show a message to the user
-        }
-      } catch (error) {
-        console.error('An error occurred during download:', error);
-      }
+      // The backend now uses cookies for authentication, so we can open the URL directly.
+      // The browser will automatically send the auth cookie and handle the download.
+      window.open('/api/download/mac', '_blank');
     } else {
       // For Windows, you can show an alert or do nothing
       alert('Windows download is not yet available.');
     }
   };
 
-  const handleAuthSuccess = (data: { user: any; accessToken: string; refreshToken: string }) => {
-    localStorage.setItem('accessToken', data.accessToken);
-    localStorage.setItem('refreshToken', data.refreshToken);
-    // Optionally, you could store user info in state or local storage as well
-    // For example: localStorage.setItem('user', JSON.stringify(data.user));
+  const handleAuthSuccess = (data: { user: any }) => {
+    // No need to handle tokens, cookies do the work.
+    // The user data can be used to update state if needed.
     setIsAuthenticated(true);
     setIsAuthModalOpen(false);
     fetchUserProfile();
   };
 
   const handleLogout = async () => {
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (refreshToken) {
-        try {
-            await apiFetch('/logout', {
-                method: 'POST',
-                body: JSON.stringify({ refreshToken }),
-            });
-        } catch (error) {
-            console.error('Logout API call failed:', error);
-        }
+    try {
+        await apiFetch('/logout', {
+            method: 'POST',
+        });
+    } catch (error) {
+        console.error('Logout API call failed:', error);
     }
-    // Always clear local storage and update state
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+    // Always clear local state and reload to reset everything
     setIsAuthenticated(false);
     setIsUserMenuOpen(false);
     setUser(null);
+    window.location.reload();
   };
 
   if (currentPage === 'profile') {

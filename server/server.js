@@ -9,6 +9,7 @@ const RPCClient = require('@alicloud/pop-core'); // For Aliyun ASR Token
 const multer = require('multer');
 const OSS = require('ali-oss');
 const path = require('path');
+const cookieParser = require('cookie-parser');
 const { calculateWordCount, calculateRecordingDuration } = require('./utils/transcription');
 const { refineText } = require('./utils/refiner');
 const { sendVerificationSms } = require('./utils/sms');
@@ -41,11 +42,13 @@ const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
     ? process.env.CORS_ORIGIN 
     : 'http://localhost:5173', // Allow Vite dev server in dev
+  credentials: true, // This is crucial for cookies
   optionsSuccessStatus: 200 // For legacy browser support
 };
 app.use(cors(corsOptions));
 
 app.use(express.json()); // Middleware to parse JSON bodies
+app.use(cookieParser()); // Add cookie parser middleware
 // Middleware for Aliyun ASR - must be placed before auth routes if they don't use it
 app.use(express.raw({ type: 'audio/wav', limit: '10mb' }));
 
@@ -105,8 +108,7 @@ async function getAsrAccessToken() {
 
 // Middleware to authenticate JWT
 function authenticateToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const token = req.cookies.accessToken;
 
   if (token == null) return res.sendStatus(401);
 
@@ -498,27 +500,38 @@ async function initializeAndStartServer() {
           user.userName = userName;
         }
 
-        // Generate tokens for the session
-        const accessToken = jwt.sign(
-          { userId: user.userId, phoneNumber: user.phoneNumber },
-          JWT_SECRET,
-          { expiresIn: JWT_EXPIRES_IN }
-        );
+        await user.save(); // Save username before generating tokens
 
-        const refreshToken = crypto.randomBytes(64).toString('hex');
+        // --- JWT and Refresh Token Generation ---
+        const accessToken = jwt.sign({ userId: user.userId, phoneNumber: user.phoneNumber }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+        const refreshToken = crypto.randomBytes(40).toString('hex');
+        
         user.refreshToken = refreshToken;
         user.refreshTokenExpiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRES_IN_DAYS * 24 * 60 * 60 * 1000);
+        await user.save();
 
-        await user.save(); // Save all changes (cleared code, tokens, possibly username)
+        // --- Set cookies instead of returning tokens in body ---
+        res.cookie('accessToken', accessToken, {
+          httpOnly: true,
+          secure: IS_PROD,
+          maxAge: 15 * 60 * 1000, // 15 minutes
+          path: '/',
+        });
+
+        res.cookie('refreshToken', refreshToken, {
+          httpOnly: true,
+          secure: IS_PROD,
+          maxAge: REFRESH_TOKEN_EXPIRES_IN_DAYS * 24 * 60 * 60 * 1000, // 30 days
+          path: '/api/refresh-token', // Scope refresh token to its endpoint
+        });
 
         res.status(200).json({
-          message: intent === 'signup' ? 'User signed up successfully.' : 'User logged in successfully.',
-          accessToken,
-          refreshToken,
+          message: intent === 'signup' ? 'Signup successful!' : 'Login successful!',
           user: {
-            id: user.userId,
+            userId: user.userId,
             phoneNumber: user.phoneNumber,
-            userName: user.userName,
+            username: user.userName,
+            avatarUrl: user.avatarUrl,
           }
         });
 
@@ -569,10 +582,10 @@ async function initializeAndStartServer() {
 
     // Endpoint to refresh the access token
     app.post('/api/refresh-token', async (req, res) => {
-      const { refreshToken } = req.body;
+      const { refreshToken } = req.cookies;
 
       if (!refreshToken) {
-        return res.status(401).json({ message: 'Refresh token is required.' });
+        return res.status(401).json({ message: 'Refresh token not found.' });
       }
 
       try {
@@ -583,23 +596,21 @@ async function initializeAndStartServer() {
         }
 
         if (new Date() > new Date(user.refreshTokenExpiresAt)) {
-          // Invalidate the token in the database
-          user.refreshToken = null;
-          user.refreshTokenExpiresAt = null;
-          await user.save();
-          return res.status(403).json({ message: 'Refresh token has expired. Please log in again.' });
+          return res.status(403).json({ message: 'Refresh token expired.' });
         }
 
-        // Token is valid, issue a new access token
-        const newAccessToken = jwt.sign(
-          { userId: user.userId, phoneNumber: user.phoneNumber },
-          JWT_SECRET,
-          { expiresIn: JWT_EXPIRES_IN }
-        );
+        // Generate a new access token
+        const newAccessToken = jwt.sign({ userId: user.userId, phoneNumber: user.phoneNumber }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 
-        res.status(200).json({
-          accessToken: newAccessToken,
+        // Send the new access token as a cookie
+        res.cookie('accessToken', newAccessToken, {
+          httpOnly: true,
+          secure: IS_PROD,
+          maxAge: 15 * 60 * 1000, // 15 minutes
+          path: '/',
         });
+
+        res.status(200).json({ message: 'Access token refreshed successfully.' });
 
       } catch (error) {
         console.error('Error during token refresh:', error);
@@ -609,27 +620,18 @@ async function initializeAndStartServer() {
 
     // Endpoint for user logout
     app.post('/api/logout', async (req, res) => {
-      const { refreshToken } = req.body;
-      if (!refreshToken) {
-        // Can't do anything if we don't know which token to invalidate
-        return res.status(400).json({ message: 'Refresh token is required.' });
-      }
+      const { refreshToken } = req.cookies;
 
-      try {
-        const user = await User.findOne({ where: { refreshToken } });
-        if (user) {
-          // Invalidate the refresh token
-          user.refreshToken = null;
-          user.refreshTokenExpiresAt = null;
-          await user.save();
-        }
-        // Always return success to prevent leaking information about which tokens are valid
-        res.status(200).json({ message: 'Logout successful.' });
-      } catch (error) {
-        console.error('Error during logout:', error);
-        // Avoid sending detailed error messages here
-        res.status(500).json({ message: 'Logout failed.' });
+      if (refreshToken) {
+        // Optional: Invalidate the refresh token in the database
+        await User.update({ refreshToken: null, refreshTokenExpiresAt: null }, { where: { refreshToken } });
       }
+      
+      // Clear the cookies
+      res.clearCookie('accessToken', { path: '/' });
+      res.clearCookie('refreshToken', { path: '/api/refresh-token' });
+
+      res.status(200).json({ message: 'Logged out successfully.' });
     });
 
     app.listen(PORT, () => {
