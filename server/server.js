@@ -513,14 +513,14 @@ async function initializeAndStartServer() {
         // --- Set cookies instead of returning tokens in body ---
         res.cookie('accessToken', accessToken, {
           httpOnly: true,
-          secure: IS_PROD,
+          secure: false, // IMPORTANT: Set to true in real production with HTTPS
           maxAge: 15 * 60 * 1000, // 15 minutes
           path: '/',
         });
 
         res.cookie('refreshToken', refreshToken, {
           httpOnly: true,
-          secure: IS_PROD,
+          secure: false, // IMPORTANT: Set to true in real production with HTTPS
           maxAge: REFRESH_TOKEN_EXPIRES_IN_DAYS * 24 * 60 * 60 * 1000, // 30 days
           path: '/api/refresh-token', // Scope refresh token to its endpoint
         });
@@ -605,7 +605,7 @@ async function initializeAndStartServer() {
         // Send the new access token as a cookie
         res.cookie('accessToken', newAccessToken, {
           httpOnly: true,
-          secure: IS_PROD,
+          secure: false, // IMPORTANT: Set to true in real production with HTTPS
           maxAge: 15 * 60 * 1000, // 15 minutes
           path: '/',
         });
