@@ -65,36 +65,22 @@ function App() {
         });
 
         if (response.ok) {
-          // The browser will handle the download automatically.
-          // We need to get the blob from the response and create a URL for it.
           const blob = await response.blob();
           const url = window.URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
-          // Extract filename from content-disposition header if available, otherwise fallback
-          const disposition = response.headers.get('content-disposition');
-          let filename = 'Voco.dmg';
-          if (disposition && disposition.indexOf('attachment') !== -1) {
-            const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
-            const matches = filenameRegex.exec(disposition);
-            if (matches != null && matches[1]) {
-              filename = matches[1].replace(/['"]/g, '');
-            }
-          }
-          link.setAttribute('download', filename);
+          link.download = 'Voco.dmg';  // Simplified filename handling
           document.body.appendChild(link);
           link.click();
           link.parentNode?.removeChild(link);
           window.URL.revokeObjectURL(url);
         } else {
           console.error('Download failed:', response.statusText);
-          // Optionally, show a message to the user
         }
       } catch (error) {
-        console.error('An error occurred during download:', error);
+        console.error('Download error:', error);
       }
     } else {
-      // For Windows, you can show an alert or do nothing
       alert('Windows download is not yet available.');
     }
   };

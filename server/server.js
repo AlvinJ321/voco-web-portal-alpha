@@ -287,10 +287,13 @@ async function initializeAndStartServer() {
     app.get('/api/download/mac', authenticateToken, (req, res) => {
       const filePath = path.join(__dirname, 'downloads', 'Voco.dmg');
       
-      // Use res.download to handle setting headers and streaming the file
+      // Add these headers to prevent caching
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       res.download(filePath, 'Voco.dmg', (err) => {
         if (err) {
-          // It's important to handle errors, e.g., file not found
           console.error('Error downloading file:', err);
           if (!res.headersSent) {
             res.status(404).send({ message: 'File not found or error during download.' });
