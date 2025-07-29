@@ -57,29 +57,15 @@ function App() {
       openAuthModal('signup');
       return;
     }
-
+  
     if (os === 'mac') {
-      try {
-        const response = await apiFetch('/download/mac', {
-          method: 'GET',
-        });
-
-        if (response.ok) {
-          const blob = await response.blob();
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = 'Voco.dmg';  // Simplified filename handling
-          document.body.appendChild(link);
-          link.click();
-          link.parentNode?.removeChild(link);
-          window.URL.revokeObjectURL(url);
-        } else {
-          console.error('Download failed:', response.statusText);
-        }
-      } catch (error) {
-        console.error('Download error:', error);
-      }
+      // CHANGE: Use native <a> tag for download instead of fetch (avoids timeout issues)
+      const link = document.createElement('a');
+      link.href = '/api/download/mac';
+      link.download = 'Voco.dmg';  // Reinforces the filename
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } else {
       alert('Windows download is not yet available.');
     }
