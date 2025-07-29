@@ -284,23 +284,35 @@ async function initializeAndStartServer() {
     });
 
     // --- Secure Download Endpoint ---
-    app.get('/api/download/mac', authenticateToken, (req, res) => {
-      const filePath = path.join(__dirname, 'downloads', 'Voco.dmg');
-      
-      // Add these headers to prevent caching
-      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-      res.set('Pragma', 'no-cache');
-      res.set('Expires', '0');
-      
-      res.download(filePath, 'Voco.dmg', (err) => {
-        if (err) {
-          console.error('Error downloading file:', err);
-          if (!res.headersSent) {
-            res.status(404).send({ message: 'File not found or error during download.' });
+
+         app.get('/api/download/mac', authenticateToken, (req, res) => {
+          const filePath = path.join(__dirname, 'downloads', 'Voco.dmg');
+          
+          // ADD: Debugging logs
+          console.log('[Debug] Request received for download. User:', req.user);  // Confirms auth
+          console.log('[Debug] Calculated filePath:', filePath);
+          
+          const fs = require('fs');
+          if (fs.existsSync(filePath)) {
+            console.log('[Debug] File exists and is accessible.');
+          } else {
+            console.log('[Debug] File does not exist or inaccessible at:', filePath);
+            return res.status(404).send({ message: 'File not found.' });
           }
-        }
-      });
-    });
+   
+          res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+          res.set('Pragma', 'no-cache');
+          res.set('Expires', '0');
+          
+          res.download(filePath, 'Voco.dmg', (err) => {
+            if (err) {
+              console.error('Error downloading file:', err);
+              if (!res.headersSent) {
+                res.status(404).send({ message: 'File not found or error during download.' });
+              }
+            }
+          });
+        });
 
     // --- Aliyun ASR (Speech-to-Text) Endpoint ---
     app.post('/api/speech', authenticateToken, async (req, res) => {

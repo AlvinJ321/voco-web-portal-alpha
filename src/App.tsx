@@ -57,15 +57,42 @@ function App() {
       openAuthModal('signup');
       return;
     }
-  
+
     if (os === 'mac') {
-      // CHANGE: Use native <a> tag for download instead of fetch (avoids timeout issues)
-      const link = document.createElement('a');
-      link.href = '/api/download/mac';
-      link.download = 'Voco.dmg';  // Reinforces the filename
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      try {
+        // CHANGE: Use fetch with long timeout and streaming for large files
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 600000);  // 10 min timeout
+
+        const response = await apiFetch('/api/download/mac', {
+          method: 'GET',
+          signal: controller.signal,  // Allows abort on timeout
+        });
+
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'Voco.dmg';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        } else {
+          console.error('Download failed:', response.statusText);
+          alert('Download failed: ' + (response.status === 403 ? 'Authentication error—please log in again.' : response.statusText));
+        }
+      } catch (error) {
+        console.error('Download error:', error);
+        if (error.name === 'AbortError') {
+          alert('Download timed out. Try a faster connection or contact support.');
+        } else {
+          alert('An error occurred during download.');
+        }
+      }
     } else {
       alert('Windows download is not yet available.');
     }
