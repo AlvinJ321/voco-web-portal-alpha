@@ -20,13 +20,22 @@ require('dotenv').config();
 
 const IS_PROD = process.env.NODE_ENV === 'production';
 
+// Primary OSS client (uses internal in prod for uploads)
 const ossClient = new OSS({
   region: process.env.ALIYUN_OSS_REGION,
   accessKeyId: process.env.ALIYUN_ENTERPRISE_ACCESS_KEY_ID,
   accessKeySecret: process.env.ALIYUN_ENTERPRISE_ACCESS_KEY_SECRET,
   bucket: process.env.ALIYUN_OSS_BUCKET,
-  // Use internal endpoint in production for security and performance
   internal: IS_PROD,
+});
+
+// Separate OSS client for generating external signed URLs (always external)
+const signingOssClient = new OSS({
+  region: process.env.ALIYUN_OSS_REGION,
+  accessKeyId: process.env.ALIYUN_ENTERPRISE_ACCESS_KEY_ID,
+  accessKeySecret: process.env.ALIYUN_ENTERPRISE_ACCESS_KEY_SECRET,
+  bucket: process.env.ALIYUN_OSS_BUCKET,
+  internal: false,  // Ensure public-facing URLs
 });
 
 const app = express();
@@ -243,8 +252,8 @@ async function initializeAndStartServer() {
 
         let signedAvatarUrl = null;
         if (user.avatarUrl) {
-          // Generate a signed URL that expires in 1 hour (3600 seconds)
-          signedAvatarUrl = ossClient.signatureUrl(user.avatarUrl, { expires: 3600 });
+          // Use the signing client to generate an external signed URL
+          signedAvatarUrl = signingOssClient.signatureUrl(user.avatarUrl, { expires: 3600 });
         }
 
         res.json({
@@ -276,7 +285,8 @@ async function initializeAndStartServer() {
         
         let signedAvatarUrl = null;
         if (user.avatarUrl) {
-          signedAvatarUrl = ossClient.signatureUrl(user.avatarUrl, { expires: 3600 });
+          // Use the signing client to generate an external signed URL
+          signedAvatarUrl = signingOssClient.signatureUrl(user.avatarUrl, { expires: 3600 });
         }
 
         res.json({
