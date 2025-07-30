@@ -26,7 +26,7 @@ function App() {
 
   const fetchUserProfile = async () => {
     try {
-      const response = await apiFetch('/profile');
+      const response = await apiFetch('/api/profile');
       if (response.ok) {
         const userData = await response.json();
         setUser(userData);

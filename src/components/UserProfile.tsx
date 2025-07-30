@@ -44,7 +44,7 @@ export default function UserProfile({ user, onBack, onProfileUpdate }: UserProfi
 
     if (avatarFile) {
       try {
-        const response = await apiUpload('/upload-avatar', avatarFile);
+        const response = await apiUpload('/api/upload-avatar', avatarFile);
         if (response.ok) {
           const data = await response.json();
           newAvatarKey = data.avatarUrl;
@@ -61,7 +61,7 @@ export default function UserProfile({ user, onBack, onProfileUpdate }: UserProfi
     }
 
     try {
-      const response = await apiFetch('/profile', {
+      const response = await apiFetch('/api/profile', {
         method: 'PUT',
         body: JSON.stringify({
           username,
