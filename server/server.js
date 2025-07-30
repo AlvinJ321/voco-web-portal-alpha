@@ -108,11 +108,20 @@ function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
-  if (token == null) return res.sendStatus(401);
+  if (token == null) {
+    console.log('[Auth Debug] No token provided, returning 401');
+    return res.sendStatus(401);
+  }
+
+  console.log('[Auth Debug] Verifying token:', token.substring(0, 10) + '...'); // Log partial token for debugging
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403);
+    if (err) {
+      console.log('[Auth Debug] Token verification failed:', err.message);
+      return res.sendStatus(403);
+    }
     req.user = user;
+    console.log('[Auth Debug] Token verified successfully for user:', user.userId);
     next();
   });
 }
@@ -286,13 +295,28 @@ async function initializeAndStartServer() {
     // --- Secure Download Endpoint ---
 
          app.get('/api/download/mac', authenticateToken, (req, res) => {
+          console.log('[Debug] __dirname:', __dirname);
+          console.log('[Debug] process.cwd():', process.cwd());
           const filePath = path.join(__dirname, 'downloads', 'Voco.dmg');
-          
+          const fs = require('fs');
+
+          console.log('[Debug] Full resolved filePath:', filePath);
+          console.log('[Debug] existsSync result:', fs.existsSync(filePath));
+
           // ADD: Debugging logs
           console.log('[Debug] Request received for download. User:', req.user);  // Confirms auth
           console.log('[Debug] Calculated filePath:', filePath);
+
+          // Additional diagnostic: Try to list files in downloads/ to verify accessibility
+          try {
+            const downloadsDir = path.join(__dirname, 'downloads');
+            const files = fs.readdirSync(downloadsDir);
+            console.log('[Debug] Downloads directory:', downloadsDir);
+            console.log('[Debug] Files in downloads:', files);
+          } catch (err) {
+            console.log('[Debug] Error reading downloads directory:', err.message);
+          }
           
-          const fs = require('fs');
           if (fs.existsSync(filePath)) {
             console.log('[Debug] File exists and is accessible.');
           } else {

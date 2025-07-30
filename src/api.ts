@@ -1,4 +1,4 @@
-const API_BASE_URL = '/api';
+const API_BASE_URL = '';
 
 function handleForcedLogout() {
   localStorage.removeItem('accessToken');
