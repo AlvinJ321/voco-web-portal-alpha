@@ -234,7 +234,7 @@ function App() {
           </button>
         </div>
         <div className="text-xl text-gray-500 font-medium">
-          支持微信、钉钉、飞书、邮箱等所有输入框
+          支持微信、飞书、邮箱、DeepSeek等所有输入框
         </div>
 
         {downloadProgress !== null && (
