@@ -50,3 +50,9 @@ deployment/
 
 # remove Voco.dmg file from git repo
 server/downloads/
+
+# context files
+context/
+
+# task files
+tasks/

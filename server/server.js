@@ -78,7 +78,8 @@ const asrQueue = new PQueue({
 });
 
 // --- Aliyun ASR (Speech-to-Text) Configuration ---
-const ALIYUN_ASR_APP_KEY = process.env.ALIYUN_ASR_APP_KEY;
+// Change this line to use the enterprise app key
+const ALIYUN_ASR_APP_KEY = process.env.ALIYUN_ENTERPRISE_ASR_APP_KEY;
 let asrAccessToken = null;
 let asrTokenExpiry = null;
 
@@ -88,8 +89,8 @@ async function getAsrAccessToken() {
   }
   try {
     const client = new RPCClient({
-      accessKeyId: process.env.ALIYUN_ASR_ACCESS_KEY_ID,
-      accessKeySecret: process.env.ALIYUN_ASR_ACCESS_KEY_SECRET,
+      accessKeyId: process.env.ALIYUN_ENTERPRISE_ACCESS_KEY_ID,
+      accessKeySecret: process.env.ALIYUN_ENTERPRISE_ACCESS_KEY_SECRET,
       // This is the regional endpoint for the token service.
       // When called from an ECS in the same region (cn-shanghai), this request will be routed over the internal network.
       endpoint: 'https://nls-meta.cn-shanghai.aliyuncs.com',
