@@ -5,7 +5,6 @@ interface UserMenuProps {
   avatarUrl?: string | null;
   onClose: () => void;
   onProfileClick: () => void;
-  onSubscriptionClick: () => void;
   onLogout: () => void;
 }
 
@@ -13,7 +12,6 @@ const UserMenu: React.FC<UserMenuProps> = ({
   avatarUrl,
   onClose,
   onProfileClick,
-  onSubscriptionClick,
   onLogout,
 }) => {
   return (
@@ -24,13 +22,6 @@ const UserMenu: React.FC<UserMenuProps> = ({
       >
         <User className="w-4 h-4" />
         个人资料
-      </button>
-      <button 
-        onClick={onSubscriptionClick}
-        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-      >
-        <CreditCard className="w-4 h-4" />
-        订阅管理
       </button>
       <button 
         onClick={onLogout}

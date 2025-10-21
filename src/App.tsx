@@ -3,7 +3,6 @@ import { Download, X, User, Mic, Apple, Laptop } from 'lucide-react';
 import AuthModal from './components/AuthModal';
 import UserMenu from './components/UserMenu';
 import UserProfile from './components/UserProfile';
-import Subscription from './components/Subscription';
 import TryItNow from './components/TryItNow';
 import apiFetch from './api';
 import VocoAppIcon from '../resource/Voco-app-icon.png';
@@ -20,7 +19,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isTryItOpen, setIsTryItOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState<'main' | 'profile' | 'subscription'>('main');
+  const [currentPage, setCurrentPage] = useState<'main' | 'profile'>('main');
   const [user, setUser] = useState<User | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
 
@@ -158,10 +157,6 @@ function App() {
     return <UserProfile user={user} onBack={() => setCurrentPage('main')} onProfileUpdate={fetchUserProfile} />;
   }
 
-  if (currentPage === 'subscription') {
-    return <Subscription onBack={() => setCurrentPage('main')} />;
-  }
-
   return (
     <div className="min-h-screen bg-white">
       <header className="px-10 py-6 flex justify-between items-center">
@@ -184,10 +179,6 @@ function App() {
                 onClose={() => setIsUserMenuOpen(false)} 
                 onProfileClick={() => {
                   setCurrentPage('profile');
-                  setIsUserMenuOpen(false);
-                }}
-                onSubscriptionClick={() => {
-                  setCurrentPage('subscription');
                   setIsUserMenuOpen(false);
                 }}
                 onLogout={handleLogout}
