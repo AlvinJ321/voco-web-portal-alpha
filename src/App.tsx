@@ -121,7 +121,7 @@ function App() {
     }
   };
 
-  const handleAuthSuccess = (data: { user: any; accessToken: string; refreshToken: string }) => {
+  const handleAuthSuccess = (data: { user: any; accessToken: string; refreshToken: string }, mode: 'login' | 'signup') => {
     localStorage.setItem('accessToken', data.accessToken);
     localStorage.setItem('refreshToken', data.refreshToken);
     // Optionally, you could store user info in state or local storage as well
@@ -129,6 +129,9 @@ function App() {
     setIsAuthenticated(true);
     setIsAuthModalOpen(false);
     fetchUserProfile();
+    if (mode === 'signup') {
+      setCurrentPage('profile');
+    }
   };
 
   const handleLogout = async () => {

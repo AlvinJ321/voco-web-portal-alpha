@@ -4,7 +4,7 @@ import VocoAppIcon from '../../resource/Voco-app-icon.png';
 
 interface AuthModalProps {
   onClose: () => void;
-  onSuccess: (data: { user: any; accessToken: string; refreshToken: string }) => void;
+  onSuccess: (data: { user: any; accessToken: string; refreshToken: string }, mode: 'login' | 'signup') => void;
   initialMode?: 'login' | 'signup';
 }
 
@@ -115,7 +115,7 @@ export default function AuthModal({ onClose, onSuccess, initialMode = 'signup' }
       }
 
       // On success, pass the whole data object up
-      onSuccess(data);
+      onSuccess(data, mode);
 
     } catch (err) {
       setErrors({ general: 'An unexpected network error occurred. Please try again.' });
