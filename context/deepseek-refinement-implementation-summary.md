@@ -36,8 +36,83 @@ For production deployment, it is highly recommended to use a private network con
 
 *   **Security:** Private endpoints ensure that all API traffic remains within the Alibaba Cloud internal network, preventing exposure to the public internet.
 *   **Performance & Stability:** Internal network access typically offers lower latency and higher reliability compared to public internet connections.
+*   **Cost Efficiency:** No public internet traffic charges when using private endpoints.
 
 The code was updated to support this by introducing an optional environment variable:
-*   `DASHSCOPE_API_BASE_URL`: If this variable is set (e.g., to a private endpoint URL like `https://ep-xxx.dashscope.cn-region.privatelink.aliyuncs.com/api/v1`), the application will use this URL. If it's not set, the application defaults to the public endpoint.
+*   `DASHSCOPE_API_BASE_URL`: If this variable is set (e.g., to a private endpoint URL), the application will use this URL. If it's not set, the application defaults to the public endpoint (`https://dashscope.aliyuncs.com/api/v1`).
 
-This allows for easy switching between development (public) and production (private) environments without code changes. 
+This allows for easy switching between development (public) and production (private) environments without code changes.
+
+### Setting Up Private Network Access (PrivateLink)
+
+To configure private network access to Bailian, follow these steps:
+
+#### Prerequisites
+
+1. **VPC Configuration:**
+   - VPC must be in the same region as Bailian service
+     - **Public Cloud:** 华北2（北京）Beijing
+     - **Financial Cloud:** 华东2金融云 Shanghai
+     - **International:** Singapore
+   - At least 2 availability zones selected
+   - At least 1 vSwitch per availability zone
+
+2. **Security Group:**
+   - Inbound rules must allow HTTP (port 80) and HTTPS (port 443)
+
+#### Steps to Create PrivateLink Endpoint
+
+1. **Log in to PrivateLink Console**
+   - Access: [Alibaba Cloud PrivateLink Console](https://vpcnext.console.aliyun.com/privatelink)
+
+2. **Select Region**
+   - Choose the region where your VPC is located (must match Bailian service region)
+
+3. **Create Interface Endpoint**
+   - Navigate to "接口终端节点" (Interface Endpoints) tab
+   - Click "创建终端节点" (Create Endpoint)
+   - Configure the following parameters:
+     *   **终端节点类型**: 接口终端节点 (Interface Endpoint)
+     *   **终端节点服务**: Select "阿里云服务" → **"com.aliyuncs.dashscope"**
+     *   **是否开启自定义服务域名**: Enable (recommended for HTTPS support)
+     *   **专有网络**: Select your VPC, availability zones, vSwitches, and security group
+     - Click "确定" (OK) to complete creation
+
+4. **Obtain Endpoint Domain**
+   - After creation, copy the **endpoint service domain name**
+   - Example format: `https://ep-xxx.dashscope.cn-region.privatelink.aliyuncs.com`
+
+5. **Configure Environment Variable**
+   - Set the `DASHSCOPE_API_BASE_URL` environment variable in your server configuration:
+     ```bash
+     DASHSCOPE_API_BASE_URL=https://your-endpoint-domain
+     ```
+   - Note: Include the `/api/v1` suffix if the endpoint domain doesn't already include it
+   - The application will automatically use this private endpoint for all Bailian API calls
+
+#### Cost Considerations
+
+According to the [Alibaba Cloud PrivateLink billing documentation](https://help.aliyun.com/zh/privatelink/product-overview/private-link-billing-description), PrivateLink charges include:
+
+1. **Instance Fee (实例费)**: 0.07 RMB per hour per availability zone
+   - Begins when the connection is established (even without usage)
+   - Stops when the endpoint is deleted
+   - Billed in 1-hour increments (minimum 1 hour charge)
+   - **Important**: You will be charged this fee continuously as long as the endpoint exists, regardless of whether you're actively using the Bailian service
+
+2. **Traffic Processing Fee (流量处理费)**: 0.07 RMB per GB
+   - Only charged when data traffic flows through the endpoint
+   - Calculated on bidirectional traffic (inbound and outbound)
+   - No charge when there's no traffic
+
+**Cost Example** (for an endpoint with 2 availability zones running 24/7 for 30 days):
+- Instance Fee: 0.07 × 24 hours × 30 days × 2 zones = **100.8 RMB/month**
+- Traffic Fee: 0.07 × actual traffic in GB
+
+**Recommendation**: Only create and maintain the PrivateLink endpoint if you need continuous, secure access to Bailian. If you only occasionally use the service, using the public endpoint may be more cost-effective.
+
+#### Reference Documentation
+
+For detailed instructions, refer to the [official Alibaba Cloud documentation on accessing Bailian through PrivateLink](https://help.aliyun.com/zh/model-studio/access-model-studio-through-privatelink).
+
+For billing details, refer to the [Alibaba Cloud PrivateLink billing documentation](https://help.aliyun.com/zh/privatelink/product-overview/private-link-billing-description). 
