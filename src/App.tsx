@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, X, User, Mic, Apple, Laptop } from 'lucide-react';
+import { Download, X, User, Mic, Apple, Laptop, Circle } from 'lucide-react';
 import AuthModal from './components/AuthModal';
 import UserMenu from './components/UserMenu';
 import UserProfile from './components/UserProfile';
@@ -158,88 +158,259 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <header className="px-10 py-6 flex justify-between items-center">
-        <img src={VocoAppIcon} alt="Voco logo" className="h-16 w-16 rounded-xl" />
-        {isAuthenticated ? (
-          <div className="relative">
-            <button
-              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-              className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
-            >
-              {user?.avatarUrl ? (
-                <img src={user.avatarUrl} alt="User" className="w-full h-full rounded-full object-cover" />
-              ) : (
-                <User className="w-10 h-10 text-gray-600" />
-              )}
-            </button>
-            {isUserMenuOpen && (
-              <UserMenu
-                avatarUrl={user?.avatarUrl} 
-                onClose={() => setIsUserMenuOpen(false)} 
-                onProfileClick={() => {
-                  setCurrentPage('profile');
-                  setIsUserMenuOpen(false);
-                }}
-                onLogout={handleLogout}
-              />
-            )}
-          </div>
-        ) : (
-          <div className="flex items-center gap-6">
-            <button
-              onClick={() => openAuthModal('login')}
-              className="text-xl text-gray-600 hover:text-blue-600"
-            >
-              登录
-            </button>
-            <button
-              onClick={() => openAuthModal('signup')}
-              className="px-6 py-3 bg-blue-600 text-white rounded-xl text-xl font-semibold hover:bg-blue-700 transition-colors"
-            >
-              注册
-            </button>
-          </div>
-        )}
-      </header>
-
-      <main className="flex-1 flex flex-col items-center justify-center text-center min-h-[70vh] w-full">
-        <h1 className="text-7xl font-extrabold text-blue-600 mb-10 leading-tight">Voco 你的语音键盘</h1>
-        <div className="mb-20">
-          <p className="text-3xl text-gray-800 font-normal mb-1">
-            一句话说完，自动写进任何输入框
-          </p>
-          <p className="text-3xl text-gray-800 font-normal">
-            AI润色，让表达清晰自然
-          </p>
-        </div>
-        <div className="flex gap-12 justify-center mb-10">
-          <button
-            onClick={() => handleDownloadClick('mac')}
-            className="px-12 py-6 border-2 border-blue-600 text-white bg-blue-600 rounded-lg text-2xl font-bold hover:bg-blue-700 transition-colors flex items-center gap-4 min-w-[280px]"
-          >
-            <Apple className="w-8 h-8" /> 立即下载 Mac 版
-          </button>
-          <button
-            onClick={() => handleDownloadClick('windows')}
-            className="px-12 py-6 border-2 border-blue-600 text-blue-700 bg-white rounded-lg text-2xl font-bold hover:bg-blue-50 transition-colors flex items-center gap-4 min-w-[280px]"
-          >
-            <Laptop className="w-8 h-8" /> 下载 Windows 版
-          </button>
-        </div>
-        <div className="text-xl text-gray-500 font-medium">
-          支持微信、飞书、邮箱、DeepSeek等所有输入框
-        </div>
-
-        {downloadProgress !== null && (
-          <div className="fixed bottom-10 right-10 bg-white p-4 rounded-lg shadow-lg z-50">
-            <p className="mb-2 font-medium">Downloading: {Math.round(downloadProgress)}%</p>
-            <div className="w-64 h-2 bg-gray-200 rounded">
-              <div className="h-full bg-blue-600 rounded" style={{ width: `${downloadProgress}%` }} />
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}>
+      {/* Header */}
+      <header className="border-b" style={{ borderColor: 'var(--border)' }}>
+        <nav className="max-w-[1152px] mx-auto px-8 py-6 grid grid-cols-3 items-center">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-full border-2 flex items-center justify-center" style={{ borderColor: 'var(--primary)' }}>
+              <span className="text-xs font-semibold" style={{ color: 'var(--primary)' }}>V</span>
             </div>
           </div>
-        )}
-      </main>
+          <div className="text-center">
+            <h1 className="text-2xl font-bold m-0" style={{ color: 'var(--primary)' }}>Voco</h1>
+            <p className="text-xs mt-1" style={{ color: 'var(--muted-foreground)' }}>你的智能语言键盘</p>
+          </div>
+          <div className="flex justify-end">
+            {isAuthenticated ? (
+              <div className="relative">
+                <button
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="p-2 rounded-full border-none bg-transparent cursor-pointer transition-colors flex items-center justify-center hover:bg-gray-100"
+                  style={{ backgroundColor: 'transparent' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--muted)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  {user?.avatarUrl ? (
+                    <img src={user.avatarUrl} alt="User" className="w-5 h-5 rounded-full object-cover" />
+                  ) : (
+                    <User className="w-5 h-5" style={{ color: 'var(--foreground)' }} />
+                  )}
+                </button>
+                {isUserMenuOpen && (
+                  <UserMenu
+                    avatarUrl={user?.avatarUrl} 
+                    onClose={() => setIsUserMenuOpen(false)} 
+                    onProfileClick={() => {
+                      setCurrentPage('profile');
+                      setIsUserMenuOpen(false);
+                    }}
+                    onLogout={handleLogout}
+                  />
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-6">
+                <button
+                  onClick={() => openAuthModal('login')}
+                  className="text-base hover:opacity-70 transition-opacity"
+                  style={{ color: 'var(--muted-foreground)' }}
+                >
+                  登录
+                </button>
+                <button
+                  onClick={() => openAuthModal('signup')}
+                  className="px-6 py-2 rounded-lg text-base font-semibold transition-colors"
+                  style={{ backgroundColor: 'var(--primary)', color: 'var(--primary-foreground)' }}
+                  onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                  onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                >
+                  注册
+                </button>
+              </div>
+            )}
+          </div>
+        </nav>
+      </header>
+
+      {/* Hero Section */}
+      <section className="border-b py-16 px-4" style={{ borderColor: 'var(--border)' }}>
+        <div className="max-w-[896px] mx-auto px-4 text-center">
+          <div className="flex flex-col items-center gap-6 mb-4">
+            <div className="w-12 h-12 rounded-full mb-4 flex items-center justify-center" style={{ backgroundColor: 'var(--muted)' }}>
+              <Circle className="w-6 h-6" style={{ color: 'var(--primary)' }} />
+            </div>
+            <h2 className="text-3xl sm:text-[36px] font-bold leading-tight max-w-full" style={{ color: 'var(--foreground)' }}>
+              将杂乱的口语表达转换成清晰易懂的文字
+            </h2>
+            <div className="flex gap-3 pt-4 justify-center flex-wrap">
+              <span className="text-sm px-3 py-1.5 rounded-full inline-block" style={{ color: 'var(--muted-foreground)', backgroundColor: 'var(--muted)' }}>
+                🎯 噪音字双语或上主注播，急表
+              </span>
+              <span className="text-sm px-3 py-1.5 rounded-full inline-block" style={{ color: 'var(--muted-foreground)', backgroundColor: 'var(--muted)' }}>
+                ⭐ 噪音字双语或上主注播，急表
+              </span>
+            </div>
+            <p className="text-xs pt-4 font-mono" style={{ color: 'var(--muted-foreground)' }}>
+              &gt; animation: 文字从左向右流动播放，功能讲述在图上方，编让点击全点字
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Features/Download Section */}
+      <section className="border-b py-16 px-4" style={{ borderColor: 'var(--border)' }}>
+        <div className="max-w-[896px] mx-auto px-4">
+          <div className="rounded-[10px] p-12 text-center flex flex-col gap-8" style={{ backgroundColor: 'var(--card)' }}>
+            <div className="flex items-center justify-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-black flex items-center justify-center">
+                <span className="text-white font-bold text-xl">Λ</span>
+              </div>
+              <h3 className="text-2xl font-bold" style={{ color: 'var(--primary)' }}>前往Mac Store下载</h3>
+            </div>
+            <p className="max-w-[448px] mx-auto" style={{ color: 'var(--muted-foreground)' }}>
+              简洁的用户体验，让您快速开始使用 Voco
+            </p>
+            <button
+              onClick={() => handleDownloadClick('mac')}
+              className="px-6 py-3 rounded-lg font-semibold transition-colors mt-4"
+              style={{ backgroundColor: 'var(--primary)', color: 'var(--primary-foreground)' }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+            >
+              下载 Mac 版
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Compatibility/Apps Section */}
+      <section className="border-b py-16 px-4" style={{ borderColor: 'var(--border)' }}>
+        <div className="max-w-[896px] mx-auto px-4 text-center">
+          <h2 className="text-xl font-semibold mb-8" style={{ color: 'var(--foreground)' }}>
+            适用于你能想到的任何苹果桌面应用
+          </h2>
+          <div className="grid grid-cols-4 sm:grid-cols-8 gap-4 max-w-[448px] mx-auto">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className="w-12 h-12 border-2 rounded-md flex items-center justify-center bg-transparent cursor-pointer transition-colors"
+                style={{ borderColor: 'var(--foreground)' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--muted)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <span className="text-xl font-light" style={{ color: 'var(--foreground)' }}>×</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Personas Section */}
+      <section className="border-b py-16 px-4" style={{ borderColor: 'var(--border)' }}>
+        <div className="max-w-[1152px] mx-auto px-4">
+          <div className="flex flex-col gap-12">
+            {/* Persona 1 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="rounded-[10px] border p-8 min-h-[192px] flex flex-col justify-between" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+                <div>
+                  <h3 className="text-lg font-bold mb-3" style={{ color: 'var(--primary)' }}>开发人员</h3>
+                  <p className="text-sm mb-2" style={{ color: 'var(--foreground)' }}>与AI流畅对话</p>
+                  <p className="text-sm font-semibold" style={{ color: 'var(--primary)' }}>Stay in the Flow</p>
+                </div>
+              </div>
+              <div className="rounded-[10px] border p-8 min-h-[192px] flex items-center justify-center" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+                <p className="text-sm text-center" style={{ color: 'var(--muted-foreground)' }}>与Cursor：deepseek哨天</p>
+              </div>
+            </div>
+
+            {/* Persona 2 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="rounded-[10px] border p-8 min-h-[192px] flex flex-col justify-between" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+                <div>
+                  <h3 className="text-lg font-bold mb-3" style={{ color: 'var(--primary)' }}>产品、运营、销售</h3>
+                  <p className="text-sm mb-2" style={{ color: 'var(--foreground)' }}>回复信息、评论</p>
+                  <p className="text-sm font-semibold" style={{ color: 'var(--primary)' }}>4x faster</p>
+                </div>
+              </div>
+              <div className="rounded-[10px] border p-8 min-h-[192px] flex items-center justify-center" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+                <p className="text-sm text-center" style={{ color: 'var(--muted-foreground)' }}>包括直接与Cursor等工具集成</p>
+              </div>
+            </div>
+
+            {/* Persona 3 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="rounded-[10px] border p-8 min-h-[192px] flex flex-col justify-between" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+                <div>
+                  <h3 className="text-lg font-bold mb-3" style={{ color: 'var(--primary)' }}>创作者</h3>
+                  <p className="text-sm mb-2" style={{ color: 'var(--foreground)' }}>快速记录灵感记忆想法</p>
+                  <p className="text-sm font-semibold" style={{ color: 'var(--primary)' }}></p>
+                </div>
+              </div>
+              <div className="rounded-[10px] border p-8 min-h-[192px] flex items-center justify-center" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+                <p className="text-sm text-center" style={{ color: 'var(--muted-foreground)' }}>打空下有风向力的应用</p>
+              </div>
+            </div>
+
+            {/* Persona 4 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="rounded-[10px] border p-8 min-h-[192px] flex flex-col justify-between" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+                <div>
+                  <h3 className="text-lg font-bold mb-3" style={{ color: 'var(--primary)' }}>分企职场人</h3>
+                  <p className="text-sm mb-2" style={{ color: 'var(--foreground)' }}>中英文美系</p>
+                  <p className="text-sm font-semibold" style={{ color: 'var(--primary)' }}>不再切换输入法</p>
+                </div>
+              </div>
+              <div className="rounded-[10px] border p-8 min-h-[192px] flex items-center justify-center" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+                <p className="text-sm text-center" style={{ color: 'var(--muted-foreground)' }}></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t py-16 px-4" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--background)' }}>
+        <div className="max-w-[1152px] mx-auto px-4">
+          <h3 className="text-2xl font-bold mb-12" style={{ color: 'var(--primary)' }}>Footer</h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="footer-column">
+              <h4 className="font-semibold mb-4" style={{ color: 'var(--foreground)' }}>Product</h4>
+              <ul className="list-none flex flex-col gap-2">
+                <li><a href="#" className="footer-link text-sm no-underline">Features</a></li>
+                <li><a href="#" className="footer-link text-sm no-underline">Pricing</a></li>
+                <li><a href="#" className="footer-link text-sm no-underline">Security</a></li>
+              </ul>
+            </div>
+            <div className="footer-column">
+              <h4 className="font-semibold mb-4" style={{ color: 'var(--foreground)' }}>Company</h4>
+              <ul className="list-none flex flex-col gap-2">
+                <li><a href="#" className="footer-link text-sm no-underline">About</a></li>
+                <li><a href="#" className="footer-link text-sm no-underline">Blog</a></li>
+                <li><a href="#" className="footer-link text-sm no-underline">Careers</a></li>
+              </ul>
+            </div>
+            <div className="footer-column">
+              <h4 className="font-semibold mb-4" style={{ color: 'var(--foreground)' }}>Resources</h4>
+              <ul className="list-none flex flex-col gap-2">
+                <li><a href="#" className="footer-link text-sm no-underline">Documentation</a></li>
+                <li><a href="#" className="footer-link text-sm no-underline">Support</a></li>
+                <li><a href="#" className="footer-link text-sm no-underline">Community</a></li>
+              </ul>
+            </div>
+            <div className="footer-column">
+              <h4 className="font-semibold mb-4" style={{ color: 'var(--foreground)' }}>Legal</h4>
+              <ul className="list-none flex flex-col gap-2">
+                <li><a href="#" className="footer-link text-sm no-underline">Privacy</a></li>
+                <li><a href="#" className="footer-link text-sm no-underline">Terms</a></li>
+                <li><a href="#" className="footer-link text-sm no-underline">Contact</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t mt-12 pt-8 text-center text-sm" style={{ borderColor: 'var(--border)', color: 'var(--muted-foreground)' }}>
+            <p>&copy; 2025 Voco. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
+
+      {downloadProgress !== null && (
+        <div className="fixed bottom-10 right-10 bg-white p-4 rounded-lg shadow-lg z-50">
+          <p className="mb-2 font-medium">Downloading: {Math.round(downloadProgress)}%</p>
+          <div className="w-64 h-2 bg-gray-200 rounded">
+            <div className="h-full bg-blue-600 rounded" style={{ width: `${downloadProgress}%` }} />
+          </div>
+        </div>
+      )}
 
       {isAuthModalOpen && (
         <AuthModal
