@@ -161,13 +161,15 @@ function App() {
     <div className="min-h-screen" style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}>
       {/* Header */}
       <header className="border-b" style={{ borderColor: 'var(--border)' }}>
-        <nav className="max-w-[1152px] mx-auto px-8 py-6 grid grid-cols-3 items-center">
+        <nav className="max-w-[1152px] mx-auto px-8 py-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full border-2 flex items-center justify-center" style={{ borderColor: 'var(--primary)' }}>
-              <span className="text-xs font-semibold" style={{ color: 'var(--primary)' }}>V</span>
-            </div>
+            <img 
+              src={VocoAppIcon} 
+              alt="Voco logo" 
+              className="w-12 h-12 rounded-full object-cover"
+            />
           </div>
-          <div className="text-center">
+          <div className="flex-1 text-center">
             <h1 className="text-2xl font-bold m-0" style={{ color: 'var(--primary)' }}>Voco</h1>
             <p className="text-xs mt-1" style={{ color: 'var(--muted-foreground)' }}>你的智能语言键盘</p>
           </div>
@@ -176,15 +178,15 @@ function App() {
               <div className="relative">
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="p-2 rounded-full border-none bg-transparent cursor-pointer transition-colors flex items-center justify-center hover:bg-gray-100"
+                  className="w-12 h-12 rounded-full border-none bg-transparent cursor-pointer transition-colors flex items-center justify-center"
                   style={{ backgroundColor: 'transparent' }}
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--muted)'}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                   {user?.avatarUrl ? (
-                    <img src={user.avatarUrl} alt="User" className="w-5 h-5 rounded-full object-cover" />
+                    <img src={user.avatarUrl} alt="User" className="w-12 h-12 rounded-full object-cover" />
                   ) : (
-                    <User className="w-5 h-5" style={{ color: 'var(--foreground)' }} />
+                    <User className="w-12 h-12" style={{ color: 'var(--foreground)' }} />
                   )}
                 </button>
                 {isUserMenuOpen && (
