@@ -161,19 +161,24 @@ function App() {
     <div className="min-h-screen" style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}>
       {/* Header */}
       <header className="border-b" style={{ borderColor: 'var(--border)' }}>
-        <nav className="max-w-[1152px] mx-auto px-8 py-6 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <nav className="max-w-[1152px] mx-auto px-8 py-6 flex items-center justify-between relative">
+          {/* Left section */}
+          <div className="flex items-center gap-2 flex-shrink-0">
             <img 
               src={VocoAppIcon} 
               alt="Voco logo" 
               className="w-12 h-12 rounded-full object-cover"
             />
           </div>
-          <div className="flex-1 text-center">
+          
+          {/* Center section - absolutely centered */}
+          <div className="absolute left-1/2 transform -translate-x-1/2 text-center pointer-events-none">
             <h1 className="text-2xl font-bold m-0" style={{ color: 'var(--primary)' }}>Voco</h1>
             <p className="text-xs mt-1" style={{ color: 'var(--muted-foreground)' }}>你的智能语言键盘</p>
           </div>
-          <div className="flex justify-end">
+          
+          {/* Right section */}
+          <div className="flex justify-end flex-shrink-0">
             {isAuthenticated ? (
               <div className="relative">
                 <button
