@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Download, X, User, Mic, Apple, Laptop, Circle } from 'lucide-react';
 import AuthModal from './components/AuthModal';
 import UserMenu from './components/UserMenu';
@@ -6,6 +6,7 @@ import UserProfile from './components/UserProfile';
 import TryItNow from './components/TryItNow';
 import apiFetch from './api';
 import VocoAppIcon from '../resource/Voco-app-icon.png';
+import AppStoreIcon from '../resource/app-store.png';
 
 interface User {
   username: string;
@@ -22,7 +23,45 @@ function App() {
   const [currentPage, setCurrentPage] = useState<'main' | 'profile'>('main');
   const [user, setUser] = useState<User | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
-
+  const [stage, setStage] = useState(0);
+  const [displayedText, setDisplayedText] = useState('');
+  const [strikethrough, setStrikethrough] = useState(false);
+  const [showLabel, setShowLabel] = useState(false);
+  const [fadeOut, setFadeOut] = useState(false);
+  const [erasedChar, setErasedChar] = useState(false);
+  const [eraseLine, setEraseLine] = useState(false);
+  const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
+  const prevFeatureIndexRef = useRef(0);
+  
+  const features = [
+    {
+      label: '删除冗余词',
+      beforeText: '采用最先进的语音识别模型，呃在各种口音、噪音环境下，精准识别。',
+      afterText: '采用最先进的语音识别模型，在各种口音、噪音环境下，精准识别。',
+      textToStrike: '呃'
+    },
+    {
+      label: '去除重复',
+      beforeText: 'AI润色，把杂乱呃杂乱的口语变成，清晰流畅的文字',
+      afterText: 'AI润色，把杂乱的口语变成清晰流畅的文字',
+      textToStrike: '呃杂乱'
+    },
+    {
+      label: '修正语法',
+      beforeText: '呃，刚才那个远程修电脑的人让我把重启之后，把IP发给你。',
+      afterText: '刚才那个远程修电脑的人让我重启之后，把IP发给你。',
+      textToStrike: ['呃，', '把']
+    },
+    {
+      label: '中英文夹杂',
+      beforeText: '今年Christmas有计划出去玩吗？',
+      afterText: '今年圣诞节有计划出去玩吗？',
+      textToStrike: 'Christmas'
+    }
+  ];
+  
+  const currentFeature = features[currentFeatureIndex];
+  
   const fetchUserProfile = async () => {
     try {
       const response = await apiFetch('/api/profile');
@@ -46,6 +85,116 @@ function App() {
       fetchUserProfile();
     }
   }, []);
+
+  // Reset animation when feature changes
+  useEffect(() => {
+    // Skip on initial mount (when both are 0)
+    if (prevFeatureIndexRef.current === currentFeatureIndex && prevFeatureIndexRef.current === 0) {
+      return;
+    }
+    
+    // Only reset if feature index actually changed
+    if (prevFeatureIndexRef.current !== currentFeatureIndex) {
+      prevFeatureIndexRef.current = currentFeatureIndex;
+      setDisplayedText('');
+      setStrikethrough(false);
+      setShowLabel(false);
+      setFadeOut(false);
+      setErasedChar(false);
+      setEraseLine(false);
+      setStage(0);
+    }
+  }, [currentFeatureIndex]);
+
+  // Hero section animation - following reference animation exactly
+  useEffect(() => {
+    const currentFeature = features[currentFeatureIndex];
+    const fullText = currentFeature.beforeText;
+    const refinedText = currentFeature.afterText;
+
+    if (stage === 0) {
+      let charIndex = 0;
+      let timeout1: ReturnType<typeof setTimeout> | null = null;
+      let timeout2: ReturnType<typeof setTimeout> | null = null;
+      
+      const interval = setInterval(() => {
+        if (charIndex <= fullText.length) {
+          setDisplayedText(fullText.slice(0, charIndex));
+          charIndex++;
+        } else {
+          clearInterval(interval);
+          // For 4th feature (中英文夹杂), skip strikethrough and go directly to label
+          if (currentFeatureIndex === 3) {
+            timeout1 = setTimeout(() => {
+              setShowLabel(true);
+              timeout2 = setTimeout(() => {
+                setShowLabel(false);
+                setStage(2);
+              }, 4000); // Show label for 4 seconds
+            }, 500);
+          } else {
+            timeout1 = setTimeout(() => setStage(1), 500);
+          }
+        }
+      }, 80); // 80ms per character for typewriter speed - matches reference
+
+      return () => {
+        clearInterval(interval);
+        if (timeout1) clearTimeout(timeout1);
+        if (timeout2) clearTimeout(timeout2);
+      };
+    }
+
+    if (stage === 1) {
+      // All timings match reference exactly
+      const timeout1 = setTimeout(() => {
+        setStrikethrough(true);
+      }, 300); // 300ms - strikethrough appears
+
+      const timeout2 = setTimeout(() => {
+        setErasedChar(true);
+        setEraseLine(true);
+      }, 800); // 800ms - char fades and line erases
+
+      const timeout3 = setTimeout(() => {
+        setDisplayedText(refinedText);
+      }, 1300); // 1300ms - switch to refined text
+
+      const timeout4 = setTimeout(() => {
+        setShowLabel(true);
+      }, 1800); // 1800ms - show label
+
+      const timeout5 = setTimeout(() => {
+        setShowLabel(false);
+        setStage(2);
+      }, 4000); // 4000ms - hide label and move to stage 2
+
+      return () => {
+        clearTimeout(timeout1);
+        clearTimeout(timeout2);
+        clearTimeout(timeout3);
+        clearTimeout(timeout4);
+        clearTimeout(timeout5);
+      };
+    }
+
+    if (stage === 2) {
+      // Stage 2: Fade out and reset - matches reference exactly
+      const timeout1 = setTimeout(() => {
+        setFadeOut(true);
+      }, 500); // 500ms - fade out
+
+      const timeout2 = setTimeout(() => {
+        // Move to next feature - the reset effect will handle resetting stage
+        setCurrentFeatureIndex((prev) => (prev + 1) % features.length);
+      }, 1500); // 1500ms - reset
+
+      return () => {
+        clearTimeout(timeout1);
+        clearTimeout(timeout2);
+      };
+    }
+  }, [stage, currentFeatureIndex]);
 
   const openAuthModal = (mode: 'login' | 'signup') => {
     setAuthMode(mode);
@@ -231,52 +380,155 @@ function App() {
       </header>
 
       {/* Hero Section */}
-      <section className="border-b py-16 px-4" style={{ borderColor: 'var(--border)' }}>
-        <div className="max-w-[896px] mx-auto px-4 text-center">
-          <div className="flex flex-col items-center gap-6 mb-4">
-            <div className="w-12 h-12 rounded-full mb-4 flex items-center justify-center" style={{ backgroundColor: 'var(--muted)' }}>
-              <Circle className="w-6 h-6" style={{ color: 'var(--primary)' }} />
-            </div>
-            <h2 className="text-3xl sm:text-[36px] font-bold leading-tight max-w-full" style={{ color: 'var(--foreground)' }}>
+      <section className="border-b py-12 px-4" style={{ borderColor: 'var(--border)' }}>
+        <div className="max-w-[896px] mx-auto px-4">
+          <div className="flex flex-col items-center gap-4">
+            {/* Main Title */}
+            <h2 className="text-3xl sm:text-[36px] font-bold leading-tight text-center mb-4" style={{ color: 'var(--foreground)' }}>
               将杂乱的口语表达转换成清晰易懂的文字
             </h2>
-            <div className="flex gap-3 pt-4 justify-center flex-wrap">
-              <span className="text-sm px-3 py-1.5 rounded-full inline-block" style={{ color: 'var(--muted-foreground)', backgroundColor: 'var(--muted)' }}>
-                🎯 噪音字双语或上主注播，急表
-              </span>
-              <span className="text-sm px-3 py-1.5 rounded-full inline-block" style={{ color: 'var(--muted-foreground)', backgroundColor: 'var(--muted)' }}>
-                ⭐ 噪音字双语或上主注播，急表
-              </span>
+
+            {/* Mac Download Section */}
+            <div className="w-full flex items-center justify-center mb-6">
+              <div
+                className="inline-flex items-center gap-5 px-10 py-5 bg-white text-blue-600 rounded-2xl border-2 border-gray-900 shadow-lg hover:shadow-xl hover:border-blue-600 hover:-translate-y-0.5 transition-all duration-200 group cursor-pointer"
+                onClick={() => handleDownloadClick('mac')}
+              >
+                {/* App Store Icon */}
+                <img src={AppStoreIcon} alt="App Store" className="w-14 h-14 object-contain" />
+
+                {/* Button Text */}
+                <span className="text-lg font-semibold">前往Mac Store下载</span>
+              </div>
             </div>
-            <p className="text-xs pt-4 font-mono" style={{ color: 'var(--muted-foreground)' }}>
-              &gt; animation: 文字从左向右流动播放，功能讲述在图上方，编让点击全点字
-            </p>
+            
+            {/* Refinement Visualization */}
+            <div className="w-full flex flex-col items-center gap-2 py-2 relative">
+              {/* Processing text at top - floating label */}
+              <div className="relative h-20 mb-1 flex items-center justify-center">
+                {showLabel && (
+                  <div
+                    className="absolute"
+                    style={{
+                      animation: 'fadeInZoomIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+                      opacity: 0,
+                      transform: 'scale(0.8)'
+                    }}
+                  >
+                    <div 
+                      className="px-5 py-2.5 rounded-lg font-bold text-base shadow-xl border whitespace-nowrap flex items-center gap-2"
+                      style={{
+                        background: 'linear-gradient(to right, #10b981, #059669)',
+                        color: 'white',
+                        borderColor: '#6ee7b7',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      <span>{currentFeature.label}</span>
+                      <span>⭐</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Main text area */}
+              <div className="w-full flex items-center justify-center relative overflow-hidden" style={{ minHeight: '48px' }}>
+                {/* Text with typewriter effect - centered container, left-aligned text */}
+                <div 
+                  className="text-2xl font-medium whitespace-nowrap" 
+                  style={{ 
+                    opacity: fadeOut ? 0 : 1,
+                    transform: `translateX(-50%) ${fadeOut ? 'scale(0.95)' : 'scale(1)'}`,
+                    transition: 'opacity 1s ease-out, transform 1s ease-out',
+                    position: 'absolute',
+                    left: '50%',
+                    textAlign: 'left'
+                  }}
+                >
+                  <span style={{ color: '#475569' }}>
+                    {displayedText.split('').map((char, index) => {
+                      const textToStrike = currentFeature.textToStrike;
+                      const textsToStrike = Array.isArray(textToStrike) ? textToStrike : [textToStrike];
+                      
+                      // Find which text to strike this character belongs to
+                      let strikeInfo: { startIndex: number; length: number } | null = null;
+                      for (const text of textsToStrike) {
+                        let strikeStartIndex = displayedText.indexOf(text);
+                        // For "把" in the 3rd feature, only match the first occurrence (before "重启")
+                        if (currentFeatureIndex === 2 && text === '把') {
+                          const beforeRestartIndex = displayedText.indexOf('重启');
+                          if (beforeRestartIndex !== -1) {
+                            // Only match "把" if it appears before "重启"
+                            const tempIndex = displayedText.substring(0, beforeRestartIndex).indexOf(text);
+                            if (tempIndex !== -1) {
+                              strikeStartIndex = tempIndex;
+                            } else {
+                              strikeStartIndex = -1; // Skip this "把" if it's after "重启"
+                            }
+                          }
+                        }
+                        if (strikeStartIndex !== -1 && 
+                            index >= strikeStartIndex && 
+                            index < strikeStartIndex + text.length) {
+                          strikeInfo = { startIndex: strikeStartIndex, length: text.length };
+                          break;
+                        }
+                      }
+                      
+                      const isInStrikeRange = strikeInfo !== null;
+                      const isFirstCharOfStrike = strikeInfo !== null && index === strikeInfo.startIndex;
+                      const shouldStrike = strikethrough && isInStrikeRange;
+
+                      if (shouldStrike && strikeInfo) {
+                        return (
+                          <span key={index} style={{ position: 'relative', display: 'inline-block' }}>
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                transition: 'opacity 0.5s ease-out, transform 0.5s ease-out',
+                                opacity: erasedChar ? 0 : 0.3,
+                                transform: erasedChar ? 'scale(0.75)' : 'scale(1)'
+                              }}
+                            >
+                              {char}
+                            </span>
+                            {isFirstCharOfStrike && (
+                              <span
+                                style={{
+                                  position: 'absolute',
+                                  left: 0,
+                                  top: '50%',
+                                  width: `${strikeInfo.length * 1.2}ch`,
+                                  height: '2px',
+                                  background: 'linear-gradient(to right, #ef4444, #f87171)',
+                                  transform: `scaleX(${eraseLine ? 0 : 1})`,
+                                  opacity: eraseLine ? 0 : (shouldStrike ? 1 : 0),
+                                  transition: 'transform 0.5s ease-out, opacity 0.5s ease-out',
+                                  transformOrigin: 'left center'
+                                }}
+                              />
+                            )}
+                          </span>
+                        );
+                      }
+                      return <span key={index}>{char}</span>;
+                    })}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Features/Download Section */}
+      {/* Features Section */}
       <section className="border-b py-16 px-4" style={{ borderColor: 'var(--border)' }}>
         <div className="max-w-[896px] mx-auto px-4">
           <div className="rounded-[10px] p-12 text-center flex flex-col gap-8" style={{ backgroundColor: 'var(--card)' }}>
-            <div className="flex items-center justify-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-black flex items-center justify-center">
-                <span className="text-white font-bold text-xl">Λ</span>
-              </div>
-              <h3 className="text-2xl font-bold" style={{ color: 'var(--primary)' }}>前往Mac Store下载</h3>
-            </div>
+            <h3 className="text-2xl font-bold" style={{ color: 'var(--primary)' }}>简洁的用户体验</h3>
             <p className="max-w-[448px] mx-auto" style={{ color: 'var(--muted-foreground)' }}>
-              简洁的用户体验，让您快速开始使用 Voco
+              让您快速开始使用 Voco
             </p>
-            <button
-              onClick={() => handleDownloadClick('mac')}
-              className="px-6 py-3 rounded-lg font-semibold transition-colors mt-4"
-              style={{ backgroundColor: 'var(--primary)', color: 'var(--primary-foreground)' }}
-              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
-              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-            >
-              下载 Mac 版
-            </button>
           </div>
         </div>
       </section>
