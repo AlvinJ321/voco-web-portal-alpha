@@ -4,6 +4,7 @@ import AuthModal from './components/AuthModal';
 import UserMenu from './components/UserMenu';
 import UserProfile from './components/UserProfile';
 import TryItNow from './components/TryItNow';
+import AppIconsSection from './components/AppIconsSection';
 import apiFetch from './api';
 import VocoAppIcon from '../resource/Voco-app-icon.png';
 import AppStoreIcon from '../resource/app-store.png';
@@ -521,39 +522,8 @@ function App() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="border-b py-16 px-4" style={{ borderColor: 'var(--border)' }}>
-        <div className="max-w-[896px] mx-auto px-4">
-          <div className="rounded-[10px] p-12 text-center flex flex-col gap-8" style={{ backgroundColor: 'var(--card)' }}>
-            <h3 className="text-2xl font-bold" style={{ color: 'var(--primary)' }}>简洁的用户体验</h3>
-            <p className="max-w-[448px] mx-auto" style={{ color: 'var(--muted-foreground)' }}>
-              让您快速开始使用 Voco
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Compatibility/Apps Section */}
-      <section className="border-b py-16 px-4" style={{ borderColor: 'var(--border)' }}>
-        <div className="max-w-[896px] mx-auto px-4 text-center">
-          <h2 className="text-xl font-semibold mb-8" style={{ color: 'var(--foreground)' }}>
-            适用于你能想到的任何苹果桌面应用
-          </h2>
-          <div className="grid grid-cols-4 sm:grid-cols-8 gap-4 max-w-[448px] mx-auto">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div
-                key={i}
-                className="w-12 h-12 border-2 rounded-md flex items-center justify-center bg-transparent cursor-pointer transition-colors"
-                style={{ borderColor: 'var(--foreground)' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--muted)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                <span className="text-xl font-light" style={{ color: 'var(--foreground)' }}>×</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* App Icons Section */}
+      <AppIconsSection />
 
       {/* Personas Section */}
       <section className="border-b py-16 px-4" style={{ borderColor: 'var(--border)' }}>
