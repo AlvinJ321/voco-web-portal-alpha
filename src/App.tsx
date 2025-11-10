@@ -386,7 +386,7 @@ function App() {
           <div className="flex flex-col items-center gap-4">
             {/* Main Title */}
             <h2 className="text-3xl sm:text-[36px] font-bold leading-tight text-center mb-4" style={{ color: 'var(--foreground)' }}>
-              将杂乱的口语表达转换成清晰易懂的文字
+              将零散的口语表达转换成清晰易懂的文字
             </h2>
 
             {/* Mac Download Section */}

@@ -10,7 +10,7 @@ import ObsidianIcon from '../../resource/app-icons/obsidian-icon.png';
 import QQIcon from '../../resource/app-icons/qq.png';
 import TeamsIcon from '../../resource/app-icons/Teams.png';
 import WeChatIcon from '../../resource/app-icons/wechat.png';
-import YuqueIcon from '../../resource/app-icons/yuque2.png';
+import FlomoIcon from '../../resource/app-icons/Flomo.png';
 import YinxiangIcon from '../../resource/app-icons/印象笔记.png';
 import DingDingIcon from '../../resource/app-icons/钉钉.png';
 
@@ -30,7 +30,7 @@ const apps: AppIcon[] = [
   { name: 'QQ', icon: QQIcon },
   { name: 'Teams', icon: TeamsIcon },
   { name: '微信', icon: WeChatIcon },
-  { name: '语雀', icon: YuqueIcon },
+  { name: 'Flomo', icon: FlomoIcon },
   { name: '印象笔记', icon: YinxiangIcon },
   { name: '钉钉', icon: DingDingIcon },
 ];
