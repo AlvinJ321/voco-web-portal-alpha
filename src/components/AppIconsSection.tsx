@@ -64,16 +64,16 @@ export default function AppIconsSection() {
     };
   }, []);
 
-  const duplicatedApps = [...apps, ...apps];
+  const duplicatedApps = [...apps, ...apps, ...apps, ...apps];
 
   return (
-    <section className="border-b py-24 px-4 overflow-hidden" style={{ backgroundColor: '#fafafa', borderColor: 'var(--border)' }}>
+    <section className="border-b py-16 px-4 overflow-hidden" style={{ backgroundColor: '#fafafa', borderColor: 'var(--border)' }}>
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-4xl font-semibold text-center mb-16 text-balance" style={{ color: '#3b82f6' }}>
+        <h2 className="text-4xl font-semibold text-center mb-12 text-balance" style={{ color: '#3b82f6' }}>
           适用于你能想到的任何苹果桌面应用
         </h2>
 
-        <div className="relative">
+        <div className="relative pb-4">
           <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#fafafa] to-transparent z-10 pointer-events-none" />
           <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#fafafa] to-transparent z-10 pointer-events-none" />
 
