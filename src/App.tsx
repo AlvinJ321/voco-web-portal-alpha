@@ -5,6 +5,7 @@ import UserMenu from './components/UserMenu';
 import UserProfile from './components/UserProfile';
 import TryItNow from './components/TryItNow';
 import AppIconsSection from './components/AppIconsSection';
+import UseCaseSection from './components/UseCaseSection';
 import apiFetch from './api';
 import VocoAppIcon from '../resource/Voco-app-icon.png';
 import AppStoreIcon from '../resource/app-store.png';
@@ -525,68 +526,8 @@ function App() {
       {/* App Icons Section */}
       <AppIconsSection />
 
-      {/* Personas Section */}
-      <section className="border-b py-16 px-4" style={{ borderColor: 'var(--border)' }}>
-        <div className="max-w-[1152px] mx-auto px-4">
-          <div className="flex flex-col gap-12">
-            {/* Persona 1 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="rounded-[10px] border p-8 min-h-[192px] flex flex-col justify-between" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-                <div>
-                  <h3 className="text-lg font-bold mb-3" style={{ color: 'var(--primary)' }}>开发人员</h3>
-                  <p className="text-sm mb-2" style={{ color: 'var(--foreground)' }}>与AI流畅对话</p>
-                  <p className="text-sm font-semibold" style={{ color: 'var(--primary)' }}>Stay in the Flow</p>
-                </div>
-              </div>
-              <div className="rounded-[10px] border p-8 min-h-[192px] flex items-center justify-center" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-                <p className="text-sm text-center" style={{ color: 'var(--muted-foreground)' }}>与Cursor：deepseek哨天</p>
-              </div>
-            </div>
-
-            {/* Persona 2 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="rounded-[10px] border p-8 min-h-[192px] flex flex-col justify-between" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-                <div>
-                  <h3 className="text-lg font-bold mb-3" style={{ color: 'var(--primary)' }}>产品、运营、销售</h3>
-                  <p className="text-sm mb-2" style={{ color: 'var(--foreground)' }}>回复信息、评论</p>
-                  <p className="text-sm font-semibold" style={{ color: 'var(--primary)' }}>4x faster</p>
-                </div>
-              </div>
-              <div className="rounded-[10px] border p-8 min-h-[192px] flex items-center justify-center" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-                <p className="text-sm text-center" style={{ color: 'var(--muted-foreground)' }}>包括直接与Cursor等工具集成</p>
-              </div>
-            </div>
-
-            {/* Persona 3 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="rounded-[10px] border p-8 min-h-[192px] flex flex-col justify-between" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-                <div>
-                  <h3 className="text-lg font-bold mb-3" style={{ color: 'var(--primary)' }}>创作者</h3>
-                  <p className="text-sm mb-2" style={{ color: 'var(--foreground)' }}>快速记录灵感记忆想法</p>
-                  <p className="text-sm font-semibold" style={{ color: 'var(--primary)' }}></p>
-                </div>
-              </div>
-              <div className="rounded-[10px] border p-8 min-h-[192px] flex items-center justify-center" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-                <p className="text-sm text-center" style={{ color: 'var(--muted-foreground)' }}>打空下有风向力的应用</p>
-              </div>
-            </div>
-
-            {/* Persona 4 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="rounded-[10px] border p-8 min-h-[192px] flex flex-col justify-between" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-                <div>
-                  <h3 className="text-lg font-bold mb-3" style={{ color: 'var(--primary)' }}>分企职场人</h3>
-                  <p className="text-sm mb-2" style={{ color: 'var(--foreground)' }}>中英文美系</p>
-                  <p className="text-sm font-semibold" style={{ color: 'var(--primary)' }}>不再切换输入法</p>
-                </div>
-              </div>
-              <div className="rounded-[10px] border p-8 min-h-[192px] flex items-center justify-center" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-                <p className="text-sm text-center" style={{ color: 'var(--muted-foreground)' }}></p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Use Case Section */}
+      <UseCaseSection />
 
       {/* Footer */}
       <footer className="border-t py-16 px-4" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--background)' }}>

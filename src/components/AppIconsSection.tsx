@@ -70,7 +70,7 @@ export default function AppIconsSection() {
     <section className="border-b py-16 px-4 overflow-hidden" style={{ backgroundColor: '#fafafa', borderColor: 'var(--border)' }}>
       <div className="max-w-7xl mx-auto">
         <h2 className="text-4xl font-semibold text-center mb-12 text-balance" style={{ color: '#3b82f6' }}>
-          适用于你能想到的任何苹果桌面应用
+          适用于你能想到的任何MacOS桌面应用
         </h2>
 
         <div className="relative pb-4">
