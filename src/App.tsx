@@ -529,6 +529,50 @@ function App() {
       {/* Use Case Section */}
       <UseCaseSection />
 
+      {/* Call to Action Section */}
+      <section className="border-b py-16 px-4" style={{ borderColor: 'var(--border)' }}>
+        <div className="max-w-[896px] mx-auto px-4">
+          <div className="flex flex-col items-center gap-6">
+            {/* Text Content */}
+            <div className="flex flex-col gap-4 text-center">
+              <p className="text-xl font-medium" style={{ color: 'var(--foreground)' }}>
+                嫌打字效率低，打断思路?
+              </p>
+              <p className="text-lg" style={{ color: 'var(--foreground)' }}>
+                Voco 的"随处输入"技术，让你能在文档、邮件、聊天窗口里直接语音输入并转写成文字。
+              </p>
+              <p className="text-lg" style={{ color: 'var(--foreground)' }}>
+                精准识别普通话，可中英文夹杂，AI润色让表达清晰自然。
+              </p>
+            </div>
+
+            {/* Call to Action Text - Highlighted */}
+            <div className="mt-2">
+              <p 
+                className="text-2xl font-bold text-center"
+                style={{ color: 'var(--primary)' }}
+              >
+                免费下载 Voco，开启高效语音输入新体验
+              </p>
+            </div>
+
+            {/* Download Button - Same style as hero section */}
+            <div className="w-full flex items-center justify-center">
+              <div
+                className="inline-flex items-center gap-5 px-10 py-5 bg-white text-blue-600 rounded-2xl border-2 border-gray-900 shadow-lg hover:shadow-xl hover:border-blue-600 hover:-translate-y-0.5 transition-all duration-200 group cursor-pointer"
+                onClick={() => handleDownloadClick('mac')}
+              >
+                {/* App Store Icon */}
+                <img src={AppStoreIcon} alt="App Store" className="w-14 h-14 object-contain" />
+
+                {/* Button Text */}
+                <span className="text-lg font-semibold">前往Mac Store下载</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t py-16 px-4" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--background)' }}>
         <div className="max-w-[1152px] mx-auto px-4">
