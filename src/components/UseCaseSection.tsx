@@ -49,7 +49,7 @@ const useCases: UseCase[] = [
     title: '产品, 运营, 销售',
     description: '处理消息、邮件与评论，4倍提效',
     items: ['回复信息，评论', '写邮件', '写文档'],
-    emoji: '💼',
+    emoji: '💬',
     renderBackground: (uniqueId: string) => (
       <>
         <defs>
