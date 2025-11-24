@@ -7,6 +7,7 @@ import TryItNow from './components/TryItNow';
 import AppIconsSection from './components/AppIconsSection';
 import UseCaseSection from './components/UseCaseSection';
 import TermsOfService from './components/TermsOfService';
+import PrivacyPolicy from './components/PrivacyPolicy';
 import apiFetch from './api';
 import VocoAppIcon from '../resource/Voco-app-icon.png';
 import AppStoreIcon from '../resource/app-store.png';
@@ -23,7 +24,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isTryItOpen, setIsTryItOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState<'main' | 'profile' | 'terms'>('main');
+  const [currentPage, setCurrentPage] = useState<'main' | 'profile' | 'terms' | 'privacy'>('main');
   const [user, setUser] = useState<User | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [stage, setStage] = useState(0);
@@ -313,6 +314,10 @@ function App() {
     return <TermsOfService onBack={() => setCurrentPage('main')} />;
   }
 
+  if (currentPage === 'privacy') {
+    return <PrivacyPolicy onBack={() => setCurrentPage('main')} />;
+  }
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}>
       {/* Header */}
@@ -582,13 +587,13 @@ function App() {
       <footer className="border-t py-8 px-4" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--background)' }}>
         <div className="max-w-[1152px] mx-auto px-4">
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs" style={{ color: 'var(--muted-foreground)' }}>
-            <a 
-              href="/privacy" 
-              className="hover:opacity-70 transition-opacity no-underline"
-              style={{ color: 'var(--muted-foreground)' }}
+            <button
+              onClick={() => setCurrentPage('privacy')}
+              className="hover:opacity-70 transition-opacity bg-transparent border-none cursor-pointer p-0"
+              style={{ color: 'var(--muted-foreground)', fontSize: 'inherit', fontFamily: 'inherit' }}
             >
               隐私政策
-            </a>
+            </button>
             <span>|</span>
             <button
               onClick={() => setCurrentPage('terms')}
