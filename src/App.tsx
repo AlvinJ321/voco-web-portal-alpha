@@ -6,6 +6,7 @@ import UserProfile from './components/UserProfile';
 import TryItNow from './components/TryItNow';
 import AppIconsSection from './components/AppIconsSection';
 import UseCaseSection from './components/UseCaseSection';
+import TermsOfService from './components/TermsOfService';
 import apiFetch from './api';
 import VocoAppIcon from '../resource/Voco-app-icon.png';
 import AppStoreIcon from '../resource/app-store.png';
@@ -22,7 +23,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isTryItOpen, setIsTryItOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState<'main' | 'profile'>('main');
+  const [currentPage, setCurrentPage] = useState<'main' | 'profile' | 'terms'>('main');
   const [user, setUser] = useState<User | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [stage, setStage] = useState(0);
@@ -308,6 +309,10 @@ function App() {
     return <UserProfile user={user} onBack={() => setCurrentPage('main')} onProfileUpdate={fetchUserProfile} />;
   }
 
+  if (currentPage === 'terms') {
+    return <TermsOfService onBack={() => setCurrentPage('main')} />;
+  }
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}>
       {/* Header */}
@@ -585,13 +590,13 @@ function App() {
               隐私政策
             </a>
             <span>|</span>
-            <a 
-              href="/terms" 
-              className="hover:opacity-70 transition-opacity no-underline"
-              style={{ color: 'var(--muted-foreground)' }}
+            <button
+              onClick={() => setCurrentPage('terms')}
+              className="hover:opacity-70 transition-opacity bg-transparent border-none cursor-pointer p-0"
+              style={{ color: 'var(--muted-foreground)', fontSize: 'inherit', fontFamily: 'inherit' }}
             >
               用户协议
-            </a>
+            </button>
             <span>|</span>
             <a 
               href="mailto:support@vocoapp.co" 
