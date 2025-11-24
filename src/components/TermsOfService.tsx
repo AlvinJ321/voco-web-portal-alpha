@@ -38,7 +38,7 @@ const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
             1.1 本协议是您与本公司之间就使用我们提供的网站及相关服务（以下简称"本服务"）所订立的协议。
           </p>
           <p className="mb-4" style={{ color: 'var(--foreground)' }}>
-            1.2 您在使用本服务前，应当仔细阅读本协议。<strong>当您完成注册程序或实际使用本服务时，即表示您已充分阅读、理解并接受本协议的全部内容，并与本公司达成协议。</strong>
+            1.2 您在使用本服务前，应当仔细阅读本协议。<strong>当您完成注册程序、点击'同意'或类似选项时，即表示您已充分阅读、理解并接受本协议的全部内容。</strong>
           </p>
         </section>
 
@@ -48,7 +48,7 @@ const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
             2.1 您在使用本服务时可能需要注册一个账号。您承诺您提供的<strong>手机号码等注册信息是真实、准确、完整</strong>的，并有义务保持信息的更新。
           </p>
           <p className="mb-4" style={{ color: 'var(--foreground)' }}>
-            2.2 您的账号由您自行负责保管。任何使用您的账号和密码进行的操作均视为您本人的行为，您应对此承担全部责任。
+            2.2 您有责任妥善保管您的账号及密码，并对此账号下发生的一切活动承担责任。如您发现任何未经授权的账号使用行为，应立即通知我们。我们将协助您采取措施，并依据适用法律确定各方的责任。
           </p>
         </section>
 
@@ -68,20 +68,20 @@ const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
         <section className="mb-8">
           <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--foreground)' }}>4. 服务的变更、中断或终止</h2>
           <p className="mb-4" style={{ color: 'var(--foreground)' }}>
-            4.1 本公司有权根据运营需要，单方面对服务内容、功能等进行调整、中断或终止。
+            4.1 为保障服务的质量和安全，我们可能视情况对服务内容、功能等进行调整、中断。如发生重大调整或中断，我们将尽可能提前通知您。如因不可抗力等原因导致服务终止，我们将向用户进行公告。
           </p>
           <p className="mb-4" style={{ color: 'var(--foreground)' }}>
-            4.2 如您违反本协议规定，本公司有权随时中断或终止对您提供本服务，且无需承担任何责任。
+            4.2 如您严重违反本协议规定，在向我们发出纠正通知后的合理期限内仍未更正的，我们有权中止或终止向您提供本服务。法律法规另有规定的除外。
           </p>
         </section>
 
         <section className="mb-8">
           <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--foreground)' }}>5. 免责声明</h2>
           <p className="mb-4" style={{ color: 'var(--foreground)' }}>
-            5.1 本服务按"现状"提供，本公司不对其适用性、稳定性及不中断性做任何明示或默示的保证。
+            5.1 我们将尽力维护服务的稳定性和安全性，但您理解并同意，互联网服务不可避免地会受各种因素影响，我们无法对服务的连续性、无差错性作绝对担保。
           </p>
           <p className="mb-4" style={{ color: 'var(--foreground)' }}>
-            5.2 对于因不可抗力（如黑客攻击、电信部门技术调整等）导致的服务中断、数据丢失等情况，本公司不承担责任。
+            5.2 对于因不可抗力（如地震、洪水、战争等）、第三方（如电信运营商）故障或政府行为导致的服务中断、数据丢失等情况，我们在法律允许的范围内免除责任。
           </p>
         </section>
 
@@ -95,7 +95,7 @@ const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
         <section className="mb-8">
           <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--foreground)' }}>7. 其他</h2>
           <p className="mb-4" style={{ color: 'var(--foreground)' }}>
-            7.1 本公司有权根据需要不时地修改本协议。修改后的协议将在网站上公布后立即生效。您继续使用本服务即视为接受修改后的协议。
+            7.1 我们有权根据需要不时地修改本协议。如发生重大变更，我们将通过网站公告、站内通知等合理方式提前通知您。若您不同意修改后的协议，您有权停止使用本服务。若您在通知后继续使用本服务，则视为接受修改后的协议。
           </p>
           <p className="mb-4" style={{ color: 'var(--foreground)' }}>
             7.2 如果您对本协议有任何问题，请通过以下方式联系我们：<strong>support@vocoapp.co</strong>
