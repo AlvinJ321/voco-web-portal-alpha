@@ -574,45 +574,38 @@ function App() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t py-16 px-4" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--background)' }}>
+      <footer className="border-t py-8 px-4" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--background)' }}>
         <div className="max-w-[1152px] mx-auto px-4">
-          <h3 className="text-2xl font-bold mb-12" style={{ color: 'var(--primary)' }}>Footer</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="footer-column">
-              <h4 className="font-semibold mb-4" style={{ color: 'var(--foreground)' }}>Product</h4>
-              <ul className="list-none flex flex-col gap-2">
-                <li><a href="#" className="footer-link text-sm no-underline">Features</a></li>
-                <li><a href="#" className="footer-link text-sm no-underline">Pricing</a></li>
-                <li><a href="#" className="footer-link text-sm no-underline">Security</a></li>
-              </ul>
-            </div>
-            <div className="footer-column">
-              <h4 className="font-semibold mb-4" style={{ color: 'var(--foreground)' }}>Company</h4>
-              <ul className="list-none flex flex-col gap-2">
-                <li><a href="#" className="footer-link text-sm no-underline">About</a></li>
-                <li><a href="#" className="footer-link text-sm no-underline">Blog</a></li>
-                <li><a href="#" className="footer-link text-sm no-underline">Careers</a></li>
-              </ul>
-            </div>
-            <div className="footer-column">
-              <h4 className="font-semibold mb-4" style={{ color: 'var(--foreground)' }}>Resources</h4>
-              <ul className="list-none flex flex-col gap-2">
-                <li><a href="#" className="footer-link text-sm no-underline">Documentation</a></li>
-                <li><a href="#" className="footer-link text-sm no-underline">Support</a></li>
-                <li><a href="#" className="footer-link text-sm no-underline">Community</a></li>
-              </ul>
-            </div>
-            <div className="footer-column">
-              <h4 className="font-semibold mb-4" style={{ color: 'var(--foreground)' }}>Legal</h4>
-              <ul className="list-none flex flex-col gap-2">
-                <li><a href="#" className="footer-link text-sm no-underline">Privacy</a></li>
-                <li><a href="#" className="footer-link text-sm no-underline">Terms</a></li>
-                <li><a href="#" className="footer-link text-sm no-underline">Contact</a></li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t mt-12 pt-8 text-center text-sm" style={{ borderColor: 'var(--border)', color: 'var(--muted-foreground)' }}>
-            <p>&copy; 2025 Voco. All rights reserved.</p>
+          <div className="flex flex-wrap items-center justify-center gap-4 text-xs" style={{ color: 'var(--muted-foreground)' }}>
+            <a 
+              href="/privacy" 
+              className="hover:opacity-70 transition-opacity no-underline"
+              style={{ color: 'var(--muted-foreground)' }}
+            >
+              隐私政策
+            </a>
+            <span>|</span>
+            <a 
+              href="/terms" 
+              className="hover:opacity-70 transition-opacity no-underline"
+              style={{ color: 'var(--muted-foreground)' }}
+            >
+              用户协议
+            </a>
+            <span>|</span>
+            <a 
+              href="mailto:support@vocoapp.co" 
+              className="hover:opacity-70 transition-opacity no-underline"
+              style={{ color: 'var(--muted-foreground)' }}
+            >
+              联系我们: support@vocoapp.co
+            </a>
+            <span>|</span>
+            <span>粤ICP备2025490615号</span>
+            <span>|</span>
+            <span>[placeholder公安备案号]</span>
+            <span>|</span>
+            <span>© 2025 广州灵猴工坊创意科技有限公司 版权所有</span>
           </div>
         </div>
       </footer>
