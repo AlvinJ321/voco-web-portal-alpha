@@ -26,7 +26,6 @@ function App() {
   const [isTryItOpen, setIsTryItOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState<'main' | 'profile'>('main');
   const [user, setUser] = useState<User | null>(null);
-  const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [stage, setStage] = useState(0);
   const [displayedText, setDisplayedText] = useState('');
   const [strikethrough, setStrikethrough] = useState(false);
@@ -207,71 +206,12 @@ function App() {
   };
 
   const handleDownloadClick = async (os: 'mac' | 'windows') => {
-    if (!isAuthenticated) {
-      openAuthModal('signup');
+    if (os === 'mac') {
+      alert('App Store上线中，敬请期待');
       return;
     }
 
-    if (os === 'mac') {
-      try {
-        setDownloadProgress(0);
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1200000);  // Increased to 20 min for prod stability
-
-        const response = await apiFetch('/api/download/mac', {
-          method: 'GET',
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeoutId);
-
-        if (response.ok) {
-          const contentLength = response.headers.get('Content-Length');
-          const total = contentLength ? parseInt(contentLength, 10) : 0;
-          let loaded = 0;
-          const chunks = [];
-          if (!response.body) {
-            throw new Error('Response body is null');
-          }
-          const reader = response.body.getReader();
-
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            chunks.push(value);
-            loaded += value.length;
-            if (total > 0) {
-              setDownloadProgress(Math.min(Math.round((loaded / total) * 100), 100));
-            }
-          }
-
-          const blob = new Blob(chunks);
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = 'Voco.dmg';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(url);
-          setDownloadProgress(null);
-        } else {
-          setDownloadProgress(null);
-          console.error('Download failed:', response.statusText);
-          alert('Download failed: ' + (response.status === 403 ? 'Authentication error—please log in again.' : response.statusText));
-        }
-      } catch (error: any) {
-        setDownloadProgress(null);
-        console.error('Download error:', error);
-        if (error.name === 'AbortError') {
-          alert('Download timed out. Try a faster connection or contact support.');
-        } else {
-          alert('An error occurred during download.');
-        }
-      }
-    } else {
-      alert('Windows download is not yet available.');
-    }
+    alert('Windows download is not yet available.');
   };
 
   const handleAuthSuccess = (data: { user: any; accessToken: string; refreshToken: string }, mode: 'login' | 'signup') => {
@@ -612,15 +552,6 @@ function App() {
           </div>
         </div>
       </footer>
-
-      {downloadProgress !== null && (
-        <div className="fixed bottom-10 right-10 bg-white p-4 rounded-lg shadow-lg z-50">
-          <p className="mb-2 font-medium">Downloading: {Math.round(downloadProgress)}%</p>
-          <div className="w-64 h-2 bg-gray-200 rounded">
-            <div className="h-full bg-blue-600 rounded" style={{ width: `${downloadProgress}%` }} />
-          </div>
-        </div>
-      )}
 
       {isAuthModalOpen && (
         <AuthModal
