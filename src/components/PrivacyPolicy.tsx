@@ -1,27 +1,34 @@
 import React from 'react';
 
 interface PrivacyPolicyProps {
-  onBack: () => void;
+  onBack?: () => void;
+  isModal?: boolean;
 }
 
-const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
+const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack, isModal = false }) => {
+  const containerClasses = isModal ? '' : 'min-h-screen';
+  const contentPadding = isModal ? 'px-6 py-6' : 'px-8 py-12';
+
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}>
-      {/* Header */}
-      <header className="border-b" style={{ borderColor: 'var(--border)' }}>
-        <nav className="max-w-[1152px] mx-auto px-8 py-6 flex items-center justify-between">
-          <button
-            onClick={onBack}
-            className="text-base hover:opacity-70 transition-opacity"
-            style={{ color: 'var(--muted-foreground)' }}
-          >
-            ← 返回
-          </button>
-        </nav>
-      </header>
+    <div className={containerClasses} style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}>
+      {!isModal && (
+        <header className="border-b" style={{ borderColor: 'var(--border)' }}>
+          <nav className="max-w-[1152px] mx-auto px-8 py-6 flex items-center justify-between">
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="text-base hover:opacity-70 transition-opacity"
+                style={{ color: 'var(--muted-foreground)' }}
+              >
+                ← 返回
+              </button>
+            )}
+          </nav>
+        </header>
+      )}
 
       {/* Content */}
-      <main className="max-w-[896px] mx-auto px-8 py-12">
+      <main className={`max-w-[896px] mx-auto ${contentPadding}`}>
         <h1 className="text-3xl font-bold mb-6" style={{ color: 'var(--foreground)' }}>隐私政策</h1>
         
         <p className="mb-8" style={{ color: 'var(--muted-foreground)' }}>

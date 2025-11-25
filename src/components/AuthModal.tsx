@@ -6,6 +6,8 @@ interface AuthModalProps {
   onClose: () => void;
   onSuccess: (data: { user: any; accessToken: string; refreshToken: string }, mode: 'login' | 'signup') => void;
   initialMode?: 'login' | 'signup';
+  onOpenTerms?: () => void;
+  onOpenPrivacy?: () => void;
 }
 
 // Define a more granular error state
@@ -15,7 +17,7 @@ interface ErrorState {
   general?: string;
 }
 
-export default function AuthModal({ onClose, onSuccess, initialMode = 'signup' }: AuthModalProps) {
+export default function AuthModal({ onClose, onSuccess, initialMode = 'signup', onOpenTerms, onOpenPrivacy }: AuthModalProps) {
   const [mode, setMode] = useState(initialMode);
   const [phone, setPhone] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
@@ -23,6 +25,7 @@ export default function AuthModal({ onClose, onSuccess, initialMode = 'signup' }
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<ErrorState>({});
   const [countdown, setCountdown] = useState(0);
+  const [isAgreementChecked, setIsAgreementChecked] = useState(false);
 
   useEffect(() => {
     setMode(initialMode);
@@ -44,6 +47,7 @@ export default function AuthModal({ onClose, onSuccess, initialMode = 'signup' }
     setIsLoading(false);
     setErrors({});
     setCountdown(0);
+    setIsAgreementChecked(false);
   };
 
   const handleSendVerification = async () => {
@@ -131,6 +135,7 @@ export default function AuthModal({ onClose, onSuccess, initialMode = 'signup' }
     setVerificationCode('');
     setIsVerificationSent(false);
     setCountdown(0); // Also reset countdown
+    setIsAgreementChecked(false);
   }
 
   return (
@@ -188,9 +193,40 @@ export default function AuthModal({ onClose, onSuccess, initialMode = 'signup' }
             {errors.code && <p className="text-red-500 text-xs mt-1 ml-1">{errors.code}</p>}
           </div>
 
+          {mode === 'signup' && (
+            <div className="flex items-start gap-2 text-sm text-gray-600">
+              <input
+                id="signup-agreement"
+                type="checkbox"
+                checked={isAgreementChecked}
+                onChange={(e) => setIsAgreementChecked(e.target.checked)}
+                required
+                className="mt-1"
+              />
+              <label htmlFor="signup-agreement" className="leading-relaxed">
+                我已阅读并同意{' '}
+                <button
+                  type="button"
+                  onClick={onOpenTerms}
+                  className="text-blue-600 hover:underline bg-transparent border-none p-0 cursor-pointer"
+                >
+                  《用户协议》
+                </button>{' '}
+                和{' '}
+                <button
+                  type="button"
+                  onClick={onOpenPrivacy}
+                  className="text-blue-600 hover:underline bg-transparent border-none p-0 cursor-pointer"
+                >
+                  《隐私政策》
+                </button>
+              </label>
+            </div>
+          )}
+
           <button
             type="submit"
-            disabled={!isVerificationSent || isLoading}
+            disabled={!isVerificationSent || isLoading || (mode === 'signup' && !isAgreementChecked)}
             className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-300 font-semibold"
           >
             {isLoading ? (mode === 'login' ? '登录中...' : '注册中...') : (mode === 'login' ? '登录' : '注册')}

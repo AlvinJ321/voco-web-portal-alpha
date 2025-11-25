@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Download, X, User, Mic, Apple, Laptop, Circle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, User } from 'lucide-react';
 import AuthModal from './components/AuthModal';
 import UserMenu from './components/UserMenu';
 import UserProfile from './components/UserProfile';
@@ -24,7 +24,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isTryItOpen, setIsTryItOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState<'main' | 'profile' | 'terms' | 'privacy'>('main');
+  const [currentPage, setCurrentPage] = useState<'main' | 'profile'>('main');
   const [user, setUser] = useState<User | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [stage, setStage] = useState(0);
@@ -36,6 +36,7 @@ function App() {
   const [eraseLine, setEraseLine] = useState(false);
   const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
   const prevFeatureIndexRef = useRef(0);
+  const [activeLegalDoc, setActiveLegalDoc] = useState<'terms' | 'privacy' | null>(null);
   
   const features = [
     {
@@ -310,14 +311,6 @@ function App() {
     return <UserProfile user={user} onBack={() => setCurrentPage('main')} onProfileUpdate={fetchUserProfile} />;
   }
 
-  if (currentPage === 'terms') {
-    return <TermsOfService onBack={() => setCurrentPage('main')} />;
-  }
-
-  if (currentPage === 'privacy') {
-    return <PrivacyPolicy onBack={() => setCurrentPage('main')} />;
-  }
-
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}>
       {/* Header */}
@@ -588,7 +581,7 @@ function App() {
         <div className="max-w-[1152px] mx-auto px-4">
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs" style={{ color: 'var(--muted-foreground)' }}>
             <button
-              onClick={() => setCurrentPage('privacy')}
+              onClick={() => setActiveLegalDoc('privacy')}
               className="hover:opacity-70 transition-opacity bg-transparent border-none cursor-pointer p-0"
               style={{ color: 'var(--muted-foreground)', fontSize: 'inherit', fontFamily: 'inherit' }}
             >
@@ -596,7 +589,7 @@ function App() {
             </button>
             <span>|</span>
             <button
-              onClick={() => setCurrentPage('terms')}
+              onClick={() => setActiveLegalDoc('terms')}
               className="hover:opacity-70 transition-opacity bg-transparent border-none cursor-pointer p-0"
               style={{ color: 'var(--muted-foreground)', fontSize: 'inherit', fontFamily: 'inherit' }}
             >
@@ -634,10 +627,37 @@ function App() {
           initialMode={authMode}
           onClose={() => setIsAuthModalOpen(false)}
           onSuccess={handleAuthSuccess}
+          onOpenTerms={() => setActiveLegalDoc('terms')}
+          onOpenPrivacy={() => setActiveLegalDoc('privacy')}
         />
       )}
 
       {isTryItOpen && <TryItNow onClose={() => setIsTryItOpen(false)} />}
+
+      {activeLegalDoc && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[85vh] shadow-2xl flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {activeLegalDoc === 'terms' ? '用户协议' : '隐私政策'}
+              </h3>
+              <button
+                onClick={() => setActiveLegalDoc(null)}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {activeLegalDoc === 'terms' ? (
+                <TermsOfService isModal />
+              ) : (
+                <PrivacyPolicy isModal />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
