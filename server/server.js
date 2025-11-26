@@ -186,6 +186,51 @@ async function initializeAndStartServer() {
       }
     });
 
+    // --- Debug endpoints for freemium fields (development only) ---
+    if (!IS_PROD) {
+      // Get current user's freemium / subscription info
+      app.get('/api/debug/user-freemium', authenticateToken, async (req, res) => {
+        try {
+          const user = await User.findByPk(req.user.userId);
+          if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+          }
+
+          res.json({
+            userId: user.userId,
+            apiUsageCount: user.apiUsageCount,
+            subscriptionStatus: user.subscriptionStatus,
+            subscriptionExpiresAt: user.subscriptionExpiresAt,
+            subscriptionPlanId: user.subscriptionPlanId,
+          });
+        } catch (error) {
+          console.error('Error fetching user freemium info:', error);
+          res.status(500).json({ message: 'Error fetching user freemium info' });
+        }
+      });
+
+      // Increment apiUsageCount for current user (for local testing)
+      app.post('/api/debug/inc-api-usage', authenticateToken, async (req, res) => {
+        try {
+          const user = await User.findByPk(req.user.userId);
+          if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+          }
+
+          user.apiUsageCount += 1;
+          await user.save();
+
+          res.json({
+            userId: user.userId,
+            apiUsageCount: user.apiUsageCount,
+          });
+        } catch (error) {
+          console.error('Error incrementing apiUsageCount:', error);
+          res.status(500).json({ message: 'Error incrementing apiUsageCount' });
+        }
+      });
+    }
+
     // Test endpoint to get all transcription records for the authenticated user
     app.get('/api/transcriptions', authenticateToken, async (req, res) => {
       try {

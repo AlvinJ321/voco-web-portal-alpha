@@ -40,6 +40,25 @@ User.init({
     type: DataTypes.DATE,
     allowNull: true,
   },
+  // Freemium / subscription fields
+  apiUsageCount: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+  },
+  subscriptionStatus: {
+    type: DataTypes.STRING, // 'free' | 'active' | 'expired'
+    allowNull: false,
+    defaultValue: 'free',
+  },
+  subscriptionExpiresAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  subscriptionPlanId: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   // createdAt and updatedAt are automatically added by Sequelize
 }, {
   // Other model options go here
