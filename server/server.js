@@ -4,7 +4,7 @@ const sequelize = require('./database'); // Your Sequelize instance
 const User = require('./models/User'); // Your User model
 const jwt = require('jsonwebtoken'); // Import jsonwebtoken
 const crypto = require('crypto'); // For generating refresh token
-const axios = require('axios'); // For Aliyun ASR
+const axios = require('axios'); // For Aliyun ASR & Paraformer
 const RPCClient = require('@alicloud/pop-core'); // For Aliyun ASR Token
 const multer = require('multer');
 const OSS = require('ali-oss');
@@ -14,6 +14,9 @@ const { refineText } = require('./utils/refiner');
 const { sendVerificationSms } = require('./utils/sms');
 const TranscriptionRecord = require('./models/TranscriptionRecord');
 const { default: PQueue } = require('p-queue');
+const { dashscopeApiKey } = require('./config/aliyun');
+const { registerParaformerRealtimePoc } = require('./paraformerRealtimePoc');
+const { registerParaformerRealtimeStream } = require('./paraformerRealtimeStream');
 
 // Load environment variables (ensure .env file is set up with JWT_SECRET)
 require('dotenv').config(); 
@@ -55,8 +58,11 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 app.use(express.json()); // Middleware to parse JSON bodies
-// Middleware for Aliyun ASR - must be placed before auth routes if they don't use it
+// Middleware for Aliyun ASR & Paraformer - must be placed before auth routes if they don't use it
 app.use(express.raw({ type: 'audio/wav', limit: '10mb' }));
+app.use(express.raw({ type: 'audio/webm', limit: '20mb' }));
+app.use(express.raw({ type: 'audio/ogg', limit: '20mb' }));
+app.use(express.raw({ type: 'application/octet-stream', limit: '20mb' }));
 
 // IMPORTANT: This will now fetch from your .env file. 
 // Ensure JWT_SECRET is defined there with a strong, unique secret!
@@ -492,6 +498,12 @@ async function initializeAndStartServer() {
         }
       }
     });
+
+    // 注册 Paraformer Realtime v2 POC 路由（仅用于内部调试）
+    if (!IS_PROD) {
+      registerParaformerRealtimePoc(app, authenticateToken);
+      registerParaformerRealtimeStream(app, authenticateToken);
+    }
 
     // Endpoint to send verification code
     app.post('/api/send-verification-code', async (req, res) => {

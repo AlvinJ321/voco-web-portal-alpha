@@ -74,6 +74,49 @@ async function apiFetch(url: string, options: RequestInit = {}) {
   return response;
 }
 
+// 用于发送二进制（音频）请求的帮助函数，会自动附带 Authorization 并处理 401/403 刷新
+export async function apiPostBinary(
+  url: string,
+  body: Blob | ArrayBuffer | Uint8Array,
+  contentType: string
+) {
+  let accessToken = localStorage.getItem('accessToken');
+  const headers = new Headers();
+
+  if (accessToken) {
+    headers.set('Authorization', `Bearer ${accessToken}`);
+  }
+  headers.set('Content-Type', contentType);
+
+  // 将 Blob 统一转换成 ArrayBuffer，避免部分环境不支持直接发送 Blob
+  const payload =
+    body instanceof Blob
+      ? await body.arrayBuffer()
+      : body;
+
+  let response = await fetch(`${API_BASE_URL}${url}`, {
+    method: 'POST',
+    body: payload as BodyInit,
+    headers,
+  });
+
+  if (response.status === 401 || response.status === 403) {
+    const newAccessToken = await refreshToken();
+    if (newAccessToken) {
+      headers.set('Authorization', `Bearer ${newAccessToken}`);
+      response = await fetch(`${API_BASE_URL}${url}`, {
+        method: 'POST',
+        body: payload as BodyInit,
+        headers,
+      });
+    } else {
+      return response;
+    }
+  }
+
+  return response;
+}
+
 export async function apiUpload(url: string, file: File) {
   const formData = new FormData();
   formData.append('file', file);
