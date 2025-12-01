@@ -39,7 +39,7 @@ function registerParaformerRealtimeStream(app, authenticateToken) {
 
       const ws = new WebSocket(url, {
         headers: {
-          Authorization: `bearer ${apiKey}`,
+          Authorization: `Bearer ${apiKey}`,
         },
       });
 
@@ -58,6 +58,21 @@ function registerParaformerRealtimeStream(app, authenticateToken) {
 
       // 基本事件处理：与非流式版本类似，但不主动发送音频
       ws.on('open', () => {
+        // 从请求参数中读取配置，如果没有则使用默认值
+        const {
+          disfluency_removal_enabled = true,
+          language_hints = ['zh', 'en'],
+          semantic_punctuation_enabled = true,
+          inverse_text_normalization_enabled = true,
+        } = req.body || {};
+        
+        // 确保 language_hints 是数组格式（如果前端传的是字符串，转换为数组）
+        const languageHintsArray = Array.isArray(language_hints)
+          ? language_hints
+          : typeof language_hints === 'string'
+          ? language_hints.split(',').map(lang => lang.trim()).filter(Boolean)
+          : ['zh', 'en'];
+
         const runTaskMessage = {
           header: {
             action: 'run-task',
@@ -73,6 +88,10 @@ function registerParaformerRealtimeStream(app, authenticateToken) {
             parameters: {
               sample_rate: 16000,
               format: 'pcm',
+              disfluency_removal_enabled,
+              language_hints: languageHintsArray,
+              semantic_punctuation_enabled,
+              inverse_text_normalization_enabled,
             },
             input: {},
           },

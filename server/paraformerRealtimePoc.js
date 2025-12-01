@@ -62,7 +62,7 @@ function transcribeWithParaformerRealtime(audioBuffer) {
 
     const ws = new WebSocket(url, {
       headers: {
-        Authorization: `bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
       },
     });
 

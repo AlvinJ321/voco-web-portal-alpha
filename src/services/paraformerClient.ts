@@ -45,6 +45,15 @@ export async function transcribeAudio(blob: Blob): Promise<ParaformerTranscribeR
 export async function startRealtimeSession(): Promise<string> {
   const response = await apiFetch('/api/paraformer/realtime-session/start', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      disfluency_removal_enabled: true,
+      language_hints: ['zh', 'en'],
+      semantic_punctuation_enabled: true,
+      inverse_text_normalization_enabled: true,
+    }),
   });
 
   if (!response.ok) {
