@@ -1,6 +1,7 @@
 const WebSocket = require('ws');
 const { v4: uuidv4 } = require('uuid');
 const { dashscopeApiKey } = require('./config/aliyun');
+const { refineText } = require('./utils/refiner');
 
 /**
  * 简单的流式识别 Session 管理，仅用于 POC。
@@ -32,6 +33,10 @@ function registerParaformerRealtimeStream(app, authenticateToken) {
           .status(500)
           .json({ error: 'DashScope API key not configured on server.' });
       }
+
+      // 读取 refinement 查询参数
+      const shouldRefine = req.query.refine === 'true';
+      const userId = req.user?.userId; // 从认证中间件获取 userId
 
       const apiKey = dashscopeApiKey;
       const url = 'wss://dashscope.aliyuncs.com/api-ws/v1/inference/';
@@ -88,7 +93,7 @@ function registerParaformerRealtimeStream(app, authenticateToken) {
             parameters: {
               sample_rate: 16000,
               format: 'pcm',
-              disfluency_removal_enabled,
+              //disfluency_removal_enabled,
               language_hints: languageHintsArray,
               semantic_punctuation_enabled,
               inverse_text_normalization_enabled,
@@ -223,6 +228,8 @@ function registerParaformerRealtimeStream(app, authenticateToken) {
         finalizePromise,
         resolveFinal,
         rejectFinal,
+        shouldRefine, // 添加 refinement 标志
+        userId, // 添加 userId
       });
 
       res.json({ sessionId });
@@ -265,7 +272,7 @@ function registerParaformerRealtimeStream(app, authenticateToken) {
         return res.status(404).json({ error: 'Session not found' });
       }
 
-      const { ws, finalizePromise } = session;
+      const { ws, finalizePromise, shouldRefine, userId } = session;
       if (ws.readyState !== WebSocket.OPEN) {
         sessions.delete(id);
         return res.status(409).json({ error: 'WebSocket not open' });
@@ -285,7 +292,14 @@ function registerParaformerRealtimeStream(app, authenticateToken) {
       ws.send(JSON.stringify(finishTaskMessage));
 
       try {
-        const transcript = await finalizePromise;
+        let transcript = await finalizePromise;
+        
+        // 如果启用了 refinement，对文本进行精炼
+        if (shouldRefine && userId && transcript) {
+          console.log('[Paraformer-Stream] Refining transcript for user:', userId);
+          transcript = await refineText(userId, transcript);
+        }
+        
         sessions.delete(id);
         console.log('[Paraformer-Stream] Final transcript:\n', transcript || '<EMPTY>');
         return res.json({ transcript });
