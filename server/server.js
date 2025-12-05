@@ -502,8 +502,10 @@ async function initializeAndStartServer() {
     // 注册 Paraformer Realtime v2 POC 路由（仅用于内部调试）
     if (!IS_PROD) {
       registerParaformerRealtimePoc(app, authenticateToken);
-      registerParaformerRealtimeStream(app, authenticateToken);
     }
+    
+    // 注册 Paraformer Realtime v2 流式识别路由（生产环境可用）
+    registerParaformerRealtimeStream(app, authenticateToken);
 
     // Endpoint to send verification code
     app.post('/api/send-verification-code', async (req, res) => {
