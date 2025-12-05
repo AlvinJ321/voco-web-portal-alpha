@@ -8,12 +8,14 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Install only production dependencies to create a smaller and more secure image
-RUN npm install --only=production
+RUN npm install --omit=dev
 
 # Copy the application's code to the working directory.
 # By being explicit, we avoid issues with .dockerignore and create a more reliable build.
 COPY server.js .
 COPY database.js .
+COPY paraformerRealtimePoc.js .
+COPY paraformerRealtimeStream.js .
 COPY config ./config
 COPY migrations ./migrations
 COPY models ./models
