@@ -546,7 +546,7 @@ function App() {
             <span>|</span>
             <span>粤ICP备2025490615号</span>
             <span>|</span>
-            <span>[placeholder公安备案号]</span>
+            <span>粤公网安备44010602014435号</span>
             <span>|</span>
             <span>© 2025 广州灵猴工坊创意科技有限公司 版权所有</span>
           </div>
