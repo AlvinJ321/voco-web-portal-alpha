@@ -50,7 +50,6 @@ export async function startRealtimeSession(): Promise<string> {
     },
     body: JSON.stringify({
       disfluency_removal_enabled: true,
-      language_hints: ['zh', 'en'],
       semantic_punctuation_enabled: true,
       inverse_text_normalization_enabled: true,
     }),
