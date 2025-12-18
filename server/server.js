@@ -676,6 +676,170 @@ async function initializeAndStartServer() {
       }
     });
 
+    // Endpoint to get user subscription status
+    app.get('/api/user/status', authenticateToken, async (req, res) => {
+      try {
+        const user = await User.findByPk(req.user.userId, {
+          attributes: ['userId', 'subscriptionStatus', 'subscriptionExpiresAt']
+        });
+
+        if (!user) {
+          return res.status(404).json({ message: 'User not found.' });
+        }
+
+        // Check if user is VIP: subscriptionStatus must be 'active' and not expired
+        const now = new Date();
+        const isVip = user.subscriptionStatus === 'active' && 
+                     user.subscriptionExpiresAt && 
+                     new Date(user.subscriptionExpiresAt) > now;
+
+        res.status(200).json({
+          is_vip: isVip,
+          subscriptionStatus: user.subscriptionStatus,
+          subscriptionExpiresAt: user.subscriptionExpiresAt
+        });
+      } catch (error) {
+        console.error('Error fetching user subscription status:', error);
+        res.status(500).json({ message: 'Error fetching user subscription status.' });
+      }
+    });
+
+    // Endpoint to bind subscription (verify receipt and bind to phone number)
+    app.post('/api/subscription/bind', async (req, res) => {
+      try {
+        const { phone, receipt } = req.body;
+
+        // Validate input parameters
+        if (!phone || !receipt) {
+          return res.status(400).json({ 
+            success: false,
+            error: 'Both phone and receipt are required.' 
+          });
+        }
+
+        // Check if RevenueCat is configured
+        const REVENUECAT_SECRET_KEY = process.env.REVENUECAT_SECRET_KEY;
+        if (!REVENUECAT_SECRET_KEY) {
+          return res.status(503).json({ 
+            success: false,
+            error: 'RevenueCat not configured yet. Please configure REVENUECAT_SECRET_KEY in environment variables.' 
+          });
+        }
+
+        // Find user by phone number
+        const user = await User.findOne({ where: { phoneNumber: phone } });
+        if (!user) {
+          return res.status(404).json({ 
+            success: false,
+            error: 'User not found with the provided phone number.' 
+          });
+        }
+
+        // TODO: Call RevenueCat API to verify receipt
+        // This will be implemented once RevenueCat is configured
+        // For now, we'll use a placeholder that returns an error
+        try {
+          const revenueCatResponse = await axios.post(
+            'https://api.revenuecat.com/v1/receipts',
+            {
+              receipt: receipt,
+              app_user_id: phone
+            },
+            {
+              headers: {
+                'Authorization': `Bearer ${REVENUECAT_SECRET_KEY}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+
+          // Extract data from RevenueCat response
+          // Expected structure: { subscriber: { entitlements: { pro_access: { expires_date: "...", original_transaction_id: "..." } } } }
+          const entitlements = revenueCatResponse.data?.subscriber?.entitlements;
+          const proAccess = entitlements?.pro_access;
+          
+          if (!proAccess) {
+            return res.status(400).json({ 
+              success: false,
+              error: 'No pro_access entitlement found in receipt.' 
+            });
+          }
+
+          const expiresDate = proAccess.expires_date;
+          const originalTransactionId = proAccess.original_transaction_id;
+
+          if (!expiresDate || !originalTransactionId) {
+            return res.status(400).json({ 
+              success: false,
+              error: 'Invalid receipt data: missing expires_date or original_transaction_id.' 
+            });
+          }
+
+          // Check if subscription is still valid
+          const expiresDateObj = new Date(expiresDate);
+          const now = new Date();
+          if (expiresDateObj <= now) {
+            return res.status(400).json({ 
+              success: false,
+              error: 'Subscription has expired.' 
+            });
+          }
+
+          // Anti-abuse check: Check if original_transaction_id is already bound to another user
+          const existingBinding = await User.findOne({ 
+            where: { 
+              originalTransactionId: originalTransactionId 
+            } 
+          });
+
+          if (existingBinding && existingBinding.userId !== user.userId) {
+            // This transaction ID is already bound to a different user
+            return res.status(409).json({ 
+              success: false,
+              error: `该订阅已绑定至其他账号（${existingBinding.phoneNumber}），无法在当前账号（${phone}）上恢复。请切换回原账号或重新购买。` 
+            });
+          }
+
+          // Update user subscription
+          user.subscriptionStatus = 'active';
+          user.subscriptionExpiresAt = expiresDateObj;
+          user.originalTransactionId = originalTransactionId;
+          await user.save();
+
+          res.status(200).json({ 
+            success: true,
+            message: 'Subscription bound successfully.',
+            subscriptionStatus: user.subscriptionStatus,
+            subscriptionExpiresAt: user.subscriptionExpiresAt
+          });
+
+        } catch (revenueCatError) {
+          // Handle RevenueCat API errors
+          if (revenueCatError.response) {
+            console.error('RevenueCat API error:', revenueCatError.response.data);
+            return res.status(revenueCatError.response.status || 500).json({ 
+              success: false,
+              error: 'Failed to verify receipt with RevenueCat.',
+              details: revenueCatError.response.data 
+            });
+          } else {
+            console.error('RevenueCat API request error:', revenueCatError.message);
+            return res.status(500).json({ 
+              success: false,
+              error: 'Failed to connect to RevenueCat API.' 
+            });
+          }
+        }
+
+      } catch (error) {
+        console.error('Error binding subscription:', error);
+        res.status(500).json({ 
+          success: false,
+          error: 'Internal server error while binding subscription.' 
+        });
+      }
+    });
+
     // Endpoint to refresh the access token
     app.post('/api/refresh-token', async (req, res) => {
       const { refreshToken } = req.body;

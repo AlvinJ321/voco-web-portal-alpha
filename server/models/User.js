@@ -59,6 +59,12 @@ User.init({
     type: DataTypes.STRING,
     allowNull: true,
   },
+  originalTransactionId: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    unique: true,
+    field: 'original_transaction_id', // Map to snake_case column name
+  },
   // createdAt and updatedAt are automatically added by Sequelize
 }, {
   // Other model options go here
