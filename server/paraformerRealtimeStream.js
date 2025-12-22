@@ -187,10 +187,19 @@ function registerParaformerRealtimeStream(app, authenticateToken) {
           }
           case 'task-failed': {
             finished = true;
+            const errorCode = message?.header?.error_code;
             const errMsg =
               message?.header?.error_message || 'Paraformer realtime task failed';
-            ws.close();
-            rejectFinal(new Error(errMsg));
+            
+            // 如果是 IdleTimeout，将其视为正常情况处理，返回空结果
+            if (errorCode === 'IdleTimeout') {
+              ws.close();
+              resolveFinal(''); // 返回空字符串，而不是抛出错误
+            } else {
+              // 其他错误仍然正常抛出
+              ws.close();
+              rejectFinal(new Error(errMsg));
+            }
             break;
           }
           default:
