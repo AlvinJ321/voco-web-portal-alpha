@@ -1,10 +1,11 @@
 import React from 'react';
-import { User, CreditCard, LogOut, Settings } from 'lucide-react';
+import { User, CreditCard, LogOut, Settings, HelpCircle } from 'lucide-react';
 
 interface UserMenuProps {
   avatarUrl?: string | null;
   onClose: () => void;
   onProfileClick: () => void;
+  onSupportClick: () => void;
   onLogout: () => void;
 }
 
@@ -12,6 +13,7 @@ const UserMenu: React.FC<UserMenuProps> = ({
   avatarUrl,
   onClose,
   onProfileClick,
+  onSupportClick,
   onLogout,
 }) => {
   return (
@@ -22,6 +24,13 @@ const UserMenu: React.FC<UserMenuProps> = ({
       >
         <User className="w-4 h-4" />
         个人资料
+      </button>
+      <button 
+        onClick={onSupportClick}
+        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+      >
+        <HelpCircle className="w-4 h-4" />
+        帮助与反馈
       </button>
       <button 
         onClick={onLogout}

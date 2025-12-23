@@ -18,6 +18,12 @@
     --accent-foreground: #ffffff;
     --border: #e8e8e8;
     --radius: 10px;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    --popover: #ffffff;
+    --popover-foreground: #1a1a1a;
+    --ring: #2563eb;
+    --input: #e8e8e8;
   }
 
   body {

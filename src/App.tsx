@@ -3,11 +3,13 @@ import { X, User } from 'lucide-react';
 import AuthModal from './components/AuthModal';
 import UserMenu from './components/UserMenu';
 import UserProfile from './components/UserProfile';
+import SupportPage from './components/SupportPage';
 import TryItNow from './components/TryItNow';
 import AppIconsSection from './components/AppIconsSection';
 import UseCaseSection from './components/UseCaseSection';
 import TermsOfService from './components/TermsOfService';
 import PrivacyPolicy from './components/PrivacyPolicy';
+import { Toaster } from './components/ui/toaster';
 import apiFetch from './api';
 import VocoAppIcon from '../resource/Voco-app-icon.png';
 import AppStoreIcon from '../resource/app-store.png';
@@ -24,7 +26,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isTryItOpen, setIsTryItOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState<'main' | 'profile'>('main');
+  const [currentPage, setCurrentPage] = useState<'main' | 'profile' | 'support'>('main');
   const [user, setUser] = useState<User | null>(null);
   const [stage, setStage] = useState(0);
   const [displayedText, setDisplayedText] = useState('');
@@ -251,6 +253,10 @@ function App() {
     return <UserProfile user={user} onBack={() => setCurrentPage('main')} onProfileUpdate={fetchUserProfile} />;
   }
 
+  if (currentPage === 'support') {
+    return <SupportPage user={user} onBack={() => setCurrentPage('main')} />;
+  }
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}>
       {/* Header */}
@@ -294,6 +300,10 @@ function App() {
                     onClose={() => setIsUserMenuOpen(false)} 
                     onProfileClick={() => {
                       setCurrentPage('profile');
+                      setIsUserMenuOpen(false);
+                    }}
+                    onSupportClick={() => {
+                      setCurrentPage('support');
                       setIsUserMenuOpen(false);
                     }}
                     onLogout={handleLogout}
@@ -589,6 +599,7 @@ function App() {
           </div>
         </div>
       )}
+      <Toaster />
     </div>
   );
 }
