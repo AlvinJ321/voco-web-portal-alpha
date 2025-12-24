@@ -26,7 +26,47 @@ export default function SupportPage({ user, onBack }: SupportPageProps) {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setFiles(Array.from(e.target.files))
+      const selectedFiles = Array.from(e.target.files)
+      const maxSize = 5 * 1024 * 1024 // 5MB
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', '.log', '.txt']
+      
+      const validFiles: File[] = []
+      const invalidFiles: string[] = []
+      
+      selectedFiles.forEach(file => {
+        // Check file size
+        if (file.size > maxSize) {
+          invalidFiles.push(`${file.name} (超过5MB限制)`)
+          return
+        }
+        
+        // Check file type
+        const fileType = file.type || ''
+        const fileName = file.name.toLowerCase()
+        const hasValidType = allowedTypes.some(type => 
+          fileType.startsWith('image/') || fileName.endsWith(type)
+        )
+        
+        if (hasValidType) {
+          validFiles.push(file)
+        } else {
+          invalidFiles.push(`${file.name} (仅支持图片和日志文件)`)
+        }
+      })
+      
+      // Show error messages for invalid files
+      if (invalidFiles.length > 0) {
+        invalidFiles.forEach(error => {
+          toast({
+            title: "文件上传失败",
+            description: error,
+            variant: "destructive",
+          })
+        })
+      }
+      
+      // Set only valid files
+      setFiles(validFiles)
     }
   }
 
@@ -183,12 +223,12 @@ export default function SupportPage({ user, onBack }: SupportPageProps) {
                     multiple
                     onChange={handleFileChange}
                     className="hidden"
-                    accept="image/*,.pdf,.log,.txt"
+                    accept="image/*,.log,.txt"
                   />
                   <Label htmlFor="attachments" className="cursor-pointer flex flex-col items-center gap-2">
                     <Upload className="h-10 w-10 text-muted-foreground" />
                     <span className="text-sm font-medium">点击上传文件或拖拽文件至此处</span>
-                    <span className="text-xs text-muted-foreground">支持：图片、PDF、日志文件（最大10MB）</span>
+                    <span className="text-xs text-muted-foreground">支持：图片、日志文件（最大5MB）</span>
                   </Label>
                 </div>
                 {files.length > 0 && (
