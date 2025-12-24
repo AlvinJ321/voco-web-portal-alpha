@@ -13,6 +13,7 @@ const { calculateWordCount, calculateRecordingDuration } = require('./utils/tran
 const { refineText } = require('./utils/refiner');
 const { sendVerificationSms } = require('./utils/sms');
 const TranscriptionRecord = require('./models/TranscriptionRecord');
+const UserFeedback = require('./models/UserFeedback');
 const { default: PQueue } = require('p-queue');
 const { dashscopeApiKey } = require('./config/aliyun');
 const { registerParaformerRealtimePoc } = require('./paraformerRealtimePoc');
@@ -166,6 +167,10 @@ async function initializeAndStartServer() {
     await TranscriptionRecord.sync();
     console.log('TranscriptionRecord table has been synchronized.');
 
+    // Then sync UserFeedback model
+    await UserFeedback.sync();
+    console.log('UserFeedback table has been synchronized.');
+
     // Test endpoint to create a transcription record
     app.post('/api/test-transcription', authenticateToken, async (req, res) => {
       try {
@@ -292,6 +297,26 @@ async function initializeAndStartServer() {
       }
     });
 
+    // Endpoint for feedback attachment upload
+    app.post('/api/upload-attachment', authenticateToken, upload.single('file'), async (req, res) => {
+      if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded.' });
+      }
+      try {
+        // Create a unique object name for the file
+        const objectName = `feedback-attachments/${req.user.userId}-${Date.now()}-${path.basename(req.file.originalname)}`;
+        
+        // Upload the file buffer to OSS
+        const result = await ossClient.put(objectName, req.file.buffer);
+
+        // Return the object name to be stored in the database
+        res.status(200).json({ attachmentUrl: objectName });
+      } catch (error) {
+        console.error('Error uploading feedback attachment to OSS:', error);
+        res.status(500).json({ message: 'Failed to upload attachment.' });
+      }
+    });
+
     // --- Profile Endpoints ---
     app.get('/api/profile', authenticateToken, async (req, res) => {
       try {
@@ -354,7 +379,75 @@ async function initializeAndStartServer() {
       }
     });
 
-    // --- Secure Download Endpoint ---
+    // --- Support/Feedback Endpoint ---    
+    // Endpoint for submitting feedback tickets
+    app.post('/api/feedback', authenticateToken, async (req, res) => {
+      try {
+        const { 
+          contactEmail, 
+          issueType, 
+          description, 
+          attachmentUrls, 
+          device_meta, 
+          audio_meta 
+        } = req.body;
+
+        // Validate required fields
+        if (!issueType || !description) {
+          return res.status(400).json({ message: 'Issue type and description are required.' });
+        }
+
+        // Create feedback record
+        const feedback = await UserFeedback.create({
+          userId: req.user.userId, // Get userId from authenticated user
+          contactEmail,
+          issueType,
+          description,
+          attachmentUrls: Array.isArray(attachmentUrls) ? JSON.stringify(attachmentUrls) : null,
+          // Extract device metadata
+          appVersion: device_meta?.app_version,
+          osVersion: device_meta?.os_version,
+          deviceModel: device_meta?.device_model,
+          cpuArch: device_meta?.cpu_arch,
+          systemMemory: device_meta?.system_memory,
+          // Extract audio metadata
+          inputDeviceName: audio_meta?.input_device,
+          inputSampleRate: audio_meta?.sample_rate ? parseInt(audio_meta.sample_rate) : null,
+          micPermissionStatus: audio_meta?.mic_permission
+        });
+
+        res.status(201).json({
+          success: true,
+          message: 'Feedback submitted successfully.',
+          feedback: {
+            id: feedback.id,
+            userId: feedback.userId,
+            contactEmail: feedback.contactEmail,
+            issueType: feedback.issueType,
+            description: feedback.description,
+            attachmentUrls: feedback.attachmentUrls ? JSON.parse(feedback.attachmentUrls) : null,
+            appVersion: feedback.appVersion,
+            osVersion: feedback.osVersion,
+            deviceModel: feedback.deviceModel,
+            cpuArch: feedback.cpuArch,
+            systemMemory: feedback.systemMemory,
+            inputDeviceName: feedback.inputDeviceName,
+            inputSampleRate: feedback.inputSampleRate,
+            micPermissionStatus: feedback.micPermissionStatus,
+            status: feedback.status,
+            createdAt: feedback.createdAt,
+            updatedAt: feedback.updatedAt
+          }
+        });
+      } catch (error) {
+        console.error('Error submitting feedback:', error);
+        res.status(500).json({
+          success: false,
+          message: 'Failed to submit feedback. Please try again later.',
+          error: error.message
+        });
+      }
+    });
 
          app.get('/api/download/mac', authenticateToken, (req, res) => {
           console.log('[Debug] __dirname:', __dirname);

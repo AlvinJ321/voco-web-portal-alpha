@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { Upload, Send, CheckCircle2, ArrowLeft } from "lucide-react"
 import { useToast } from "../hooks/use-toast"
 import { Toaster } from "./ui/toaster"
+import apiFetch, { apiUpload } from "../api"
 
 interface SupportPageProps {
   user: { username: string; avatarUrl?: string } | null
@@ -74,56 +75,128 @@ export default function SupportPage({ user, onBack }: SupportPageProps) {
     e.preventDefault()
     setIsSubmitting(true)
 
-    // Simulate system info collection
-    const systemInfo = {
-      userId: user?.username || "unknown", // In production, get from authenticated user
-      appVersion: "v1.2.0 (Build 345)",
-      macOSVersion: "macOS 14.1.2 Sonoma",
-      deviceModel: "MacBook Pro (14-inch, Nov 2023)",
-      processor: "Apple M3 Pro",
-      memory: "16 GB",
-      inputDevice: "Internal Microphone",
-      sampleRate: "44100 Hz",
-      micPermission: "Authorized",
-    }
-
-    // Create FormData to send files and info
-    const formData = new FormData()
-    formData.append("category", category)
-    formData.append("description", description)
-    formData.append("email", email)
-    formData.append("systemInfo", JSON.stringify(systemInfo))
-
-    files.forEach((file) => {
-      formData.append("attachments", file)
-    })
-
-    // Simulate API call
     try {
-      // TODO: Replace with actual API endpoint
-      // await apiFetch('/api/support', {
-      //   method: 'POST',
-      //   body: formData,
-      // })
+      // 1. Upload files first to get URLs
+      const attachmentUrls: string[] = []
+      if (files.length > 0) {
+        for (const file of files) {
+          try {
+            const uploadResponse = await apiUpload('/api/upload-attachment', file)
+            if (!uploadResponse.ok) {
+              throw new Error('Failed to upload file: ' + file.name)
+            }
+            const uploadResult = await uploadResponse.json()
+            if (uploadResult.attachmentUrl) {
+              attachmentUrls.push(uploadResult.attachmentUrl)
+            }
+          } catch (uploadError) {
+            console.error('File upload error:', uploadError)
+            toast({
+              title: "文件上传失败",
+              description: `${file.name} 上传失败，请重试。`,
+              variant: "destructive",
+            })
+          }
+        }
+      }
+
+      // 2. Prepare system metadata
+      // 检测CPU架构，添加更好的浏览器兼容性支持
+      let cpuArch = 'unknown';
       
-      // Simulate delay
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      // 添加调试信息
+      console.log('=== CPU Architecture Detection Debug ===');
+      console.log('navigator.userAgentData:', navigator.userAgentData);
+      console.log('navigator.userAgentData?.architecture:', navigator.userAgentData?.architecture);
+      console.log('navigator.userAgent:', navigator.userAgent);
+      console.log('navigator.platform:', navigator.platform);
       
-      setIsSubmitting(false)
+      // 尝试使用现代的 userAgentData API
+      if (navigator.userAgentData) {
+        console.log('Using userAgentData API');
+        if (navigator.userAgentData.architecture) {
+          cpuArch = navigator.userAgentData.architecture;
+          console.log('From userAgentData.architecture:', cpuArch);
+        } else {
+          console.log('userAgentData.architecture is undefined');
+        }
+      } else {
+        console.log('userAgentData not available');
+      }
       
-      // Show success message
-      toast({
-        title: "工单已提交",
-        description: "我们会努力尽快回复您的邮件。如遇咨询高峰，回复可能会有延迟，感谢您的耐心等待。",
+      // 即使userAgentData存在，如果architecture为undefined，仍解析userAgent字符串
+      if (cpuArch === 'unknown' && navigator.userAgent) {
+        console.log('Falling back to userAgent parsing');
+        const userAgent = navigator.userAgent;
+        const platform = navigator.platform;
+        
+        // 同时检查 userAgent 和 platform
+        if (userAgent.includes('x86_64') || userAgent.includes('x64') || platform.includes('MacIntel')) {
+          cpuArch = 'x86_64';
+          console.log('Detected x86_64 from userAgent/platform');
+        } else if (userAgent.includes('x86')) {
+          cpuArch = 'x86';
+          console.log('Detected x86 from userAgent');
+        } else if (userAgent.includes('ARM64') || userAgent.includes('arm64') || platform.includes('MacARM')) {
+          cpuArch = 'ARM64';
+          console.log('Detected ARM64 from userAgent/platform');
+        } else if (userAgent.includes('ARM') || userAgent.includes('arm')) {
+          cpuArch = 'ARM';
+          console.log('Detected ARM from userAgent');
+        } else {
+          console.log('No architecture pattern found in userAgent/platform');
+        }
+      }
+      
+      console.log('Final detected CPU architecture:', cpuArch);
+      console.log('=== End CPU Architecture Detection Debug ===');
+      
+      const device_meta = {
+        app_version: "v1.2.0 (Build 345)",
+        os_version: navigator.platform + ' ' + navigator.userAgent,
+        device_model: navigator.userAgentData?.platform || navigator.platform,
+        cpu_arch: cpuArch,
+        system_memory: navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'unknown',
+      }
+
+      const audio_meta = {
+        input_device: "Internal Microphone",
+        sample_rate: "44100",
+        mic_permission: "Authorized",
+      }
+
+      // 3. Submit feedback data to API
+      const response = await apiFetch('/api/feedback', {
+        method: 'POST',
+        body: JSON.stringify({
+          contactEmail: email,
+          issueType: category,
+          description: description,
+          attachmentUrls: attachmentUrls,
+          device_meta,
+          audio_meta
+        })
       })
 
-      // Reset form after a short delay to ensure toast is visible
-      setTimeout(() => {
-        setCategory("")
-        setDescription("")
-        setEmail("")
-        setFiles([])
-      }, 100)
+      if (response.ok) {
+        setIsSubmitting(false)
+        
+        // Show success message
+        toast({
+          title: "工单已提交",
+          description: "我们会努力尽快回复您的邮件。如遇咨询高峰，回复可能会有延迟，感谢您的耐心等待。",
+        })
+
+        // Reset form after a short delay to ensure toast is visible
+        setTimeout(() => {
+          setCategory("")
+          setDescription("")
+          setEmail("")
+          setFiles([])
+        }, 100)
+      } else {
+        throw new Error('Failed to submit feedback')
+      }
     } catch (error) {
       setIsSubmitting(false)
       toast({
