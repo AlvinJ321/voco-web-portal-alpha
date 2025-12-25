@@ -12,6 +12,7 @@ const path = require('path');
 const { calculateWordCount, calculateRecordingDuration } = require('./utils/transcription');
 const { refineText } = require('./utils/refiner');
 const { sendVerificationSms } = require('./utils/sms');
+const { sendFeedbackEmails } = require('./utils/email');
 const TranscriptionRecord = require('./models/TranscriptionRecord');
 const UserFeedback = require('./models/UserFeedback');
 const { default: PQueue } = require('p-queue');
@@ -415,6 +416,28 @@ async function initializeAndStartServer() {
           inputSampleRate: audio_meta?.sample_rate ? parseInt(audio_meta.sample_rate) : null,
           micPermissionStatus: audio_meta?.mic_permission
         });
+
+        // Prepare feedback data for email
+        const feedbackData = {
+          id: feedback.id,
+          userId: feedback.userId,
+          contactEmail: feedback.contactEmail,
+          issueType: feedback.issueType,
+          description: feedback.description,
+          appVersion: feedback.appVersion,
+          osVersion: feedback.osVersion,
+          deviceModel: feedback.deviceModel,
+          cpuArch: feedback.cpuArch,
+          systemMemory: feedback.systemMemory,
+          inputDeviceName: feedback.inputDeviceName,
+          inputSampleRate: feedback.inputSampleRate,
+          micPermissionStatus: feedback.micPermissionStatus
+        };
+
+        // Send emails asynchronously without blocking the response
+        sendFeedbackEmails(feedbackData)
+          .then(() => console.log('Feedback emails sent successfully'))
+          .catch(error => console.error('Error sending feedback emails:', error));
 
         res.status(201).json({
           success: true,
