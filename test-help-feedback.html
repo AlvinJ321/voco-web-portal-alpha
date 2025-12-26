@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试帮助与反馈跳转</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            gap: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .instruction {
+            text-align: center;
+            max-width: 500px;
+        }
+        .log {
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            width: 500px;
+            height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>测试帮助与反馈跳转</h1>
+    <div class="instruction">
+        <p>点击下方按钮，模拟从Mac OS应用点击"帮助与反馈"按钮的行为：</p>
+        <p>1. 会打开一个新窗口，跳转到开发服务器的支持页面</p>
+        <p>2. 请在新窗口中尝试登录</p>
+        <p>3. 如果出现错误，请查看浏览器控制台的详细日志</p>
+    </div>
+    <button id="testBtn">点击测试帮助与反馈跳转</button>
+    <div class="log" id="log">
+        <p>测试日志：</p>
+    </div>
+
+    <script>
+        const testBtn = document.getElementById('testBtn');
+        const logDiv = document.getElementById('log');
+
+        function addLog(message) {
+            const p = document.createElement('p');
+            p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(p);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        testBtn.addEventListener('click', () => {
+            addLog('开始测试跳转...');
+            const url = 'http://localhost:5174/?page=support';
+            addLog(`跳转到: ${url}`);
+            window.open(url, '_blank');
+            addLog('跳转完成，请在新窗口中尝试登录并查看控制台日志');
+        });
+
+        addLog('测试页面已准备就绪');
+        addLog('开发服务器地址: http://localhost:5174/');
+        addLog('支持页面地址: http://localhost:5174/?page=support');
+    </script>
+</body>
+</html>

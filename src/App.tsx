@@ -86,9 +86,29 @@ function App() {
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
+    
+    // Parse URL parameters to support direct navigation from Mac OS app
+    const urlParams = new URLSearchParams(window.location.search);
+    const page = urlParams.get('page');
+    const redirectToSupport = page === 'support';
+    
     if (token) {
       setIsAuthenticated(true);
       fetchUserProfile();
+      
+      // If user is authenticated and wants to go to support page, redirect immediately
+      if (redirectToSupport) {
+        setCurrentPage('support');
+      }
+    } else {
+      // If user is not authenticated but wants to go to support page
+      // Open login modal first, support page will be navigated after successful login
+      if (redirectToSupport) {
+        setAuthMode('login');
+        setIsAuthModalOpen(true);
+        // Store the intended page in localStorage to redirect after login
+        localStorage.setItem('intendedPage', 'support');
+      }
     }
   }, []);
 
@@ -224,7 +244,13 @@ function App() {
     setIsAuthenticated(true);
     setIsAuthModalOpen(false);
     fetchUserProfile();
-    if (mode === 'signup') {
+    
+    // Check if there's an intended page to redirect to (e.g., from Mac OS app click)
+    const intendedPage = localStorage.getItem('intendedPage');
+    if (intendedPage === 'support') {
+      setCurrentPage('support');
+      localStorage.removeItem('intendedPage'); // Clear the intended page after redirect
+    } else if (mode === 'signup') {
       setCurrentPage('profile');
     }
   };

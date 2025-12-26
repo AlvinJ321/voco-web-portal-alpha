@@ -80,6 +80,8 @@ export default function AuthModal({ onClose, onSuccess, initialMode = 'signup', 
       setIsVerificationSent(true);
       setCountdown(60);
     } catch (err) {
+      console.error('Send verification error:', err);
+      console.error('Error stack:', err instanceof Error ? err.stack : 'No stack available');
       setErrors({ general: 'An unexpected network error occurred. Please try again.' });
     } finally {
       setIsLoading(false);
@@ -122,6 +124,13 @@ export default function AuthModal({ onClose, onSuccess, initialMode = 'signup', 
       onSuccess(data, mode);
 
     } catch (err) {
+      console.error('Verification/Login error:', err);
+      console.error('Error stack:', err instanceof Error ? err.stack : 'No stack available');
+      console.error('Error type:', typeof err);
+      if (err instanceof Error) {
+        console.error('Error name:', err.name);
+        console.error('Error message:', err.message);
+      }
       setErrors({ general: 'An unexpected network error occurred. Please try again.' });
     } finally {
       setIsLoading(false);
