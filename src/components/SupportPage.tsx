@@ -12,6 +12,72 @@ import { useToast } from "../hooks/use-toast"
 import { Toaster } from "./ui/toaster"
 import apiFetch, { apiUpload } from "../api"
 
+// ==========================================
+// 1. 新增：更高级的 OS 版本检测逻辑 (异步)
+// ==========================================
+async function getRealOSVersion(userAgent: string): Promise<string> {
+  // A. 尝试使用 High Entropy Values (针对 Chrome/Edge 等)
+  // 这是目前唯一能在 Web 端拿到 macOS 真实大版本的方法
+  if ((navigator as any).userAgentData && (navigator as any).userAgentData.getHighEntropyValues) {
+    try {
+      const uaData = await (navigator as any).userAgentData.getHighEntropyValues(["platformVersion"]);
+      if (uaData.platformVersion) {
+        // platformVersion 返回的是内核版本，例如:
+        // 13.x.x -> macOS Ventura (13)
+        // 14.x.x -> macOS Sonoma (14)
+        // 15.x.x -> macOS Sequoia (15)
+        const majorVersion = parseInt(uaData.platformVersion.split('.')[0]);
+        
+        // 简单的内核版本映射 (Chromium on Mac 的 platformVersion 通常直接对应 macOS 大版本)
+        // 注意：这里的映射逻辑可能随浏览器实现微调，但通常 int(version) 就是 macOS 版本
+        if (majorVersion >= 11) {
+          return `macOS ${uaData.platformVersion} (Detected via Client Hints)`;
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to get high entropy values", e);
+    }
+  }
+
+  // B. 降级方案：解析 UserAgent (针对 Safari/Firefox)
+  // 虽然这里绝大多数时候会被冻结在 10.15.7，但这是唯一的备选方案
+  if (userAgent.includes('Mac OS X')) {
+    const match = userAgent.match(/Mac OS X (\d+_\d+(_\d+)?)/);
+    if (match && match[1]) {
+      const ver = match[1].replace(/_/g, '.');
+      // 如果检测到是 10.15.7，我们给它加个备注，告诉看日志的人这可能不准
+      if (ver === '10.15.7') {
+        return 'macOS 10.15.7 (or newer)';
+      }
+      return `macOS ${ver}`;
+    }
+  }
+  
+  return navigator.platform || 'macOS';
+}
+
+// 2. 优化的 GPU 检测函数
+function getGPUInfo(): string {
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    if (!gl) return 'unknown';
+    const debugInfo = (gl as WebGLRenderingContext).getExtension('WEBGL_debug_renderer_info');
+    if (!debugInfo) return 'unknown';
+    const renderer = (gl as WebGLRenderingContext).getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+    canvas.remove();
+    return renderer || 'unknown';
+  } catch (error) {
+    console.error('Error getting GPU info:', error);
+    return 'unknown';
+  }
+}
+
+// 3. 屏幕信息函数
+function getScreenInfo() {
+  return `${window.screen.width}x${window.screen.height} (PxRatio: ${window.devicePixelRatio})`;
+}
+
 interface SupportPageProps {
   user: { username: string; avatarUrl?: string } | null
   onBack: () => void
@@ -151,12 +217,35 @@ export default function SupportPage({ user, onBack }: SupportPageProps) {
       console.log('Final detected CPU architecture:', cpuArch);
       console.log('=== End CPU Architecture Detection Debug ===');
       
+      // Get real OS version using the new async function
+      const userAgent = navigator.userAgent;
+      const realOSVersion = await getRealOSVersion(userAgent);
+      
+      // Handle memory display with browser limit consideration
+      let systemMemory = 'unknown';
+      if (navigator.deviceMemory !== undefined) {
+        if (navigator.deviceMemory === 8) {
+          systemMemory = '≥ 8 GB (Browser Limit)';
+        } else {
+          systemMemory = navigator.deviceMemory + ' GB';
+        }
+      }
+      
+      // Get GPU info for device model
+      const gpuInfo = getGPUInfo();
+      
+      // Add CPU cores to architecture
+      const cpuCores = navigator.hardwareConcurrency || 'unknown';
+      const cpuArchWithCores = `${cpuArch} (${cpuCores} cores)`;
+      
       const device_meta = {
         app_version: "v1.2.0 (Build 345)",
-        os_version: navigator.userAgentData?.platform || navigator.platform,
-        device_model: navigator.userAgentData?.platform || navigator.platform,
-        cpu_arch: cpuArch,
-        system_memory: navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'unknown',
+        os_version: realOSVersion,
+        device_model: `GPU: ${gpuInfo}`,
+        cpu_arch: cpuArchWithCores,
+        system_memory: systemMemory,
+        user_agent_raw: userAgent,
+        screen_info: getScreenInfo(),
       }
 
       const audio_meta = {
