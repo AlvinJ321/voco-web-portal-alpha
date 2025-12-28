@@ -384,6 +384,11 @@ async function initializeAndStartServer() {
     // Endpoint for submitting feedback tickets
     app.post('/api/feedback', authenticateToken, async (req, res) => {
       try {
+        // Log detailed request information for debugging
+        console.log('=== Feedback Submission Debug ===');
+        console.log('User ID from auth:', req.user.userId);
+        console.log('Request body:', req.body);
+        
         const { 
           contactEmail, 
           issueType, 
@@ -395,10 +400,27 @@ async function initializeAndStartServer() {
 
         // Validate required fields
         if (!issueType || !description) {
+          console.log('Validation failed: issueType or description missing');
           return res.status(400).json({ message: 'Issue type and description are required.' });
         }
 
-        // Create feedback record
+        // Verify user exists in database (debug check)
+        const userExists = await User.findByPk(req.user.userId);
+        console.log('User exists:', !!userExists);
+        if (!userExists) {
+          console.log('User not found:', req.user.userId);
+          return res.status(401).json({ message: 'User not found. Please login again.' });
+        }
+
+        // Create feedback record with detailed logging
+        console.log('Creating feedback record with data:');
+        console.log('userId:', req.user.userId);
+        console.log('contactEmail:', contactEmail);
+        console.log('issueType:', issueType);
+        console.log('description:', description);
+        console.log('attachmentUrls (raw):', attachmentUrls);
+        console.log('attachmentUrls (JSON):', Array.isArray(attachmentUrls) ? JSON.stringify(attachmentUrls) : null);
+        
         const feedback = await UserFeedback.create({
           userId: req.user.userId, // Get userId from authenticated user
           contactEmail,
@@ -416,6 +438,8 @@ async function initializeAndStartServer() {
           inputSampleRate: audio_meta?.sample_rate ? parseInt(audio_meta.sample_rate) : null,
           micPermissionStatus: audio_meta?.mic_permission
         });
+
+        console.log('Feedback record created successfully:', feedback.id);
 
         // Prepare feedback data for email
         const feedbackData = {
@@ -462,8 +486,12 @@ async function initializeAndStartServer() {
             updatedAt: feedback.updatedAt
           }
         });
+        console.log('=== Feedback Submission Debug Complete ===');
       } catch (error) {
+        console.error('=== Feedback Submission Error ===');
         console.error('Error submitting feedback:', error);
+        console.error('Error stack:', error.stack);
+        console.error('=== Feedback Submission Error Complete ===');
         res.status(500).json({
           success: false,
           message: 'Failed to submit feedback. Please try again later.',
