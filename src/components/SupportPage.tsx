@@ -153,7 +153,7 @@ export default function SupportPage({ user, onBack }: SupportPageProps) {
       
       const device_meta = {
         app_version: "v1.2.0 (Build 345)",
-        os_version: navigator.platform + ' ' + navigator.userAgent,
+        os_version: navigator.userAgentData?.platform || navigator.platform,
         device_model: navigator.userAgentData?.platform || navigator.platform,
         cpu_arch: cpuArch,
         system_memory: navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'unknown',

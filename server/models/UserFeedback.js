@@ -48,7 +48,7 @@ UserFeedback.init({
     comment: '应用版本号'
   },
   osVersion: {
-    type: DataTypes.STRING(100),
+    type: DataTypes.STRING(255),
     allowNull: true,
     comment: '系统版本号'
   },
