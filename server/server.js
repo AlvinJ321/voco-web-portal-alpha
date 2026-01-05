@@ -879,101 +879,120 @@ async function initializeAndStartServer() {
           });
         }
 
-        // TODO: Call RevenueCat API to verify receipt
-        // This will be implemented once RevenueCat is configured
-        // For now, we'll use a placeholder that returns an error
-        try {
-          const revenueCatResponse = await axios.post(
-            'https://api.revenuecat.com/v1/receipts',
-            {
-              receipt: receipt,
-              app_user_id: phone
-            },
-            {
-              headers: {
-                'Authorization': `Bearer ${REVENUECAT_SECRET_KEY}`,
-                'Content-Type': 'application/json'
-              }
-            }
-          );
+        let vocoPro;
 
-          // Extract data from RevenueCat response
-          // Expected structure: { subscriber: { entitlements: { pro_access: { expires_date: "...", original_transaction_id: "..." } } } }
-          const entitlements = revenueCatResponse.data?.subscriber?.entitlements;
-          const proAccess = entitlements?.pro_access;
+        // --- Mock Receipt Logic (For Dev/Testing) ---
+        // Bypass RevenueCat if a specific mock receipt string is used in non-prod environment
+        // Format: 'TEST_RECEIPT_VIP' (fixed ID) or 'TEST_RECEIPT_VIP:my_custom_id' (custom ID)
+        if (!IS_PROD && receipt && receipt.startsWith('TEST_RECEIPT_VIP')) {
+          console.log('[Dev] Using Mock VIP Receipt for testing.');
           
-          if (!proAccess) {
-            return res.status(400).json({ 
-              success: false,
-              error: 'No pro_access entitlement found in receipt.' 
-            });
+          let mockTransId = 'mock_trans_fixed_default'; // Default to fixed ID to test anti-abuse
+          const parts = receipt.split(':');
+          if (parts.length > 1 && parts[1]) {
+            mockTransId = `mock_trans_${parts[1]}`; // Allow custom ID for success testing
           }
 
-          const expiresDate = proAccess.expires_date;
-          const originalTransactionId = proAccess.original_transaction_id;
+          vocoPro = {
+            expires_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+            original_transaction_id: mockTransId
+          };
+        } else {
+          // --- Real RevenueCat Verification ---
+          try {
+            const revenueCatResponse = await axios.post(
+              'https://api.revenuecat.com/v1/receipts',
+              {
+                receipt: receipt,
+                app_user_id: phone
+              },
+              {
+                headers: {
+                  'Authorization': `Bearer ${REVENUECAT_SECRET_KEY}`,
+                  'Content-Type': 'application/json'
+                }
+              }
+            );
 
-          if (!expiresDate || !originalTransactionId) {
-            return res.status(400).json({ 
-              success: false,
-              error: 'Invalid receipt data: missing expires_date or original_transaction_id.' 
-            });
-          }
+            // Extract data from RevenueCat response
+            // Expected structure: { subscriber: { entitlements: { "Voco Pro": { expires_date: "...", original_transaction_id: "..." } } } }
+            const entitlements = revenueCatResponse.data?.subscriber?.entitlements;
+            vocoPro = entitlements?.['Voco Pro'];
 
-          // Check if subscription is still valid
-          const expiresDateObj = new Date(expiresDate);
-          const now = new Date();
-          if (expiresDateObj <= now) {
-            return res.status(400).json({ 
-              success: false,
-              error: 'Subscription has expired.' 
-            });
-          }
-
-          // Anti-abuse check: Check if original_transaction_id is already bound to another user
-          const existingBinding = await User.findOne({ 
-            where: { 
-              originalTransactionId: originalTransactionId 
-            } 
-          });
-
-          if (existingBinding && existingBinding.userId !== user.userId) {
-            // This transaction ID is already bound to a different user
-            return res.status(409).json({ 
-              success: false,
-              error: `该订阅已绑定至其他账号（${existingBinding.phoneNumber}），无法在当前账号（${phone}）上恢复。请切换回原账号或重新购买。` 
-            });
-          }
-
-          // Update user subscription
-          user.subscriptionStatus = 'active';
-          user.subscriptionExpiresAt = expiresDateObj;
-          user.originalTransactionId = originalTransactionId;
-          await user.save();
-
-          res.status(200).json({ 
-            success: true,
-            message: 'Subscription bound successfully.',
-            subscriptionStatus: user.subscriptionStatus,
-            subscriptionExpiresAt: user.subscriptionExpiresAt
-          });
-
-        } catch (revenueCatError) {
-          // Handle RevenueCat API errors
-          if (revenueCatError.response) {
-            console.error('RevenueCat API error:', revenueCatError.response.data);
-            return res.status(revenueCatError.response.status || 500).json({ 
-              success: false,
-              error: 'Failed to verify receipt with RevenueCat.',
-              details: revenueCatError.response.data 
-            });
-          } else {
-            console.error('RevenueCat API request error:', revenueCatError.message);
-            return res.status(500).json({ 
-              success: false,
-              error: 'Failed to connect to RevenueCat API.' 
-            });
+          } catch (revenueCatError) {
+            // Handle RevenueCat API errors
+            if (revenueCatError.response) {
+              console.error('RevenueCat API error:', revenueCatError.response.data);
+              return res.status(revenueCatError.response.status || 500).json({ 
+                success: false,
+                error: 'Failed to verify receipt with RevenueCat.',
+                details: revenueCatError.response.data 
+              });
+            } else {
+              console.error('RevenueCat API request error:', revenueCatError.message);
+              return res.status(500).json({ 
+                success: false,
+                error: 'Failed to connect to RevenueCat API.' 
+              });
+            }
           }
         }
+
+        // --- Common Subscription Processing ---
+        if (!vocoPro) {
+          return res.status(400).json({ 
+            success: false,
+            error: 'No "Voco Pro" entitlement found in receipt.' 
+          });
+        }
+
+        const expiresDate = vocoPro.expires_date;
+        const originalTransactionId = vocoPro.original_transaction_id;
+
+        if (!expiresDate || !originalTransactionId) {
+          return res.status(400).json({ 
+            success: false,
+            error: 'Invalid receipt data: missing expires_date or original_transaction_id.' 
+          });
+        }
+
+        // Check if subscription is still valid
+        const expiresDateObj = new Date(expiresDate);
+        const now = new Date();
+        if (expiresDateObj <= now) {
+          return res.status(400).json({ 
+            success: false,
+            error: 'Subscription has expired.' 
+          });
+        }
+
+        // Anti-abuse check: Check if original_transaction_id is already bound to another user
+        const existingBinding = await User.findOne({ 
+          where: { 
+            originalTransactionId: originalTransactionId 
+          } 
+        });
+
+        if (existingBinding && existingBinding.userId !== user.userId) {
+          // This transaction ID is already bound to a different user
+          return res.status(409).json({ 
+            success: false,
+            error: `该订阅已绑定至其他账号（${existingBinding.phoneNumber}），无法在当前账号（${phone}）上恢复。请切换回原账号或重新购买。` 
+          });
+        }
+
+        // Update user subscription
+        user.subscriptionStatus = 'active';
+        user.subscriptionExpiresAt = expiresDateObj;
+        user.originalTransactionId = originalTransactionId;
+        await user.save();
+
+        res.status(200).json({ 
+          success: true,
+          message: 'Subscription bound successfully.',
+          subscriptionStatus: user.subscriptionStatus,
+          subscriptionExpiresAt: user.subscriptionExpiresAt
+        });
 
       } catch (error) {
         console.error('Error binding subscription:', error);
