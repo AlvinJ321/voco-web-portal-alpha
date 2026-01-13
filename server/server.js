@@ -214,6 +214,7 @@ async function initializeAndStartServer() {
             subscriptionStatus: user.subscriptionStatus,
             subscriptionExpiresAt: user.subscriptionExpiresAt,
             subscriptionPlanId: user.subscriptionPlanId,
+            trialUsedAt: user.trialUsedAt,
           });
         } catch (error) {
           console.error('Error fetching user freemium info:', error);
@@ -824,27 +825,104 @@ async function initializeAndStartServer() {
     app.get('/api/user/status', authenticateToken, async (req, res) => {
       try {
         const user = await User.findByPk(req.user.userId, {
-          attributes: ['userId', 'subscriptionStatus', 'subscriptionExpiresAt']
+          attributes: ['userId', 'subscriptionStatus', 'subscriptionExpiresAt', 'trialUsedAt']
         });
 
         if (!user) {
           return res.status(404).json({ message: 'User not found.' });
         }
 
-        // Check if user is VIP: subscriptionStatus must be 'active' and not expired
         const now = new Date();
-        const isVip = user.subscriptionStatus === 'active' && 
-                     user.subscriptionExpiresAt && 
-                     new Date(user.subscriptionExpiresAt) > now;
+        const expiresAt = user.subscriptionExpiresAt ? new Date(user.subscriptionExpiresAt) : null;
+        const isPro = user.subscriptionStatus === 'active' && expiresAt && expiresAt > now;
+        const isTrial = user.subscriptionStatus === 'trial' && expiresAt && expiresAt > now;
+        const tier = isPro ? 'pro' : isTrial ? 'trial' : 'free';
 
         res.status(200).json({
-          is_vip: isVip,
+          tier,
+          is_vip: tier === 'pro',
+          is_trial: tier === 'trial',
           subscriptionStatus: user.subscriptionStatus,
-          subscriptionExpiresAt: user.subscriptionExpiresAt
+          subscriptionExpiresAt: user.subscriptionExpiresAt,
+          trialUsedAt: user.trialUsedAt,
         });
       } catch (error) {
         console.error('Error fetching user subscription status:', error);
         res.status(500).json({ message: 'Error fetching user subscription status.' });
+      }
+    });
+
+    app.post('/api/subscription/start-trial', authenticateToken, async (req, res) => {
+      try {
+        const user = await User.findByPk(req.user.userId);
+        if (!user) {
+          return res.status(404).json({ message: 'User not found.' });
+        }
+
+        const now = new Date();
+        const expiresAt = user.subscriptionExpiresAt ? new Date(user.subscriptionExpiresAt) : null;
+        const isPro = user.subscriptionStatus === 'active' && expiresAt && expiresAt > now;
+        const isTrial = user.subscriptionStatus === 'trial' && expiresAt && expiresAt > now;
+
+        if (isPro) {
+          return res.status(200).json({
+            success: true,
+            message: 'User is already a pro member.',
+            tier: 'pro',
+            subscriptionStatus: user.subscriptionStatus,
+            subscriptionExpiresAt: user.subscriptionExpiresAt,
+            trialUsedAt: user.trialUsedAt,
+          });
+        }
+
+        if (isTrial) {
+          return res.status(200).json({
+            success: true,
+            message: 'Trial already active.',
+            tier: 'trial',
+            subscriptionStatus: user.subscriptionStatus,
+            subscriptionExpiresAt: user.subscriptionExpiresAt,
+            trialUsedAt: user.trialUsedAt,
+          });
+        }
+
+        if (user.originalTransactionId) {
+          return res.status(409).json({
+            success: false,
+            error: 'This account has purchase history and is not eligible for trial.',
+          });
+        }
+
+        if (user.trialUsedAt) {
+          return res.status(409).json({
+            success: false,
+            error: 'Trial has already been used for this account.',
+          });
+        }
+
+        const trialDays = Number.parseInt(process.env.TRIAL_DAYS || '7', 10);
+        const safeTrialDays = Number.isFinite(trialDays) && trialDays > 0 ? trialDays : 7;
+        const trialExpiresAt = new Date(now.getTime() + safeTrialDays * 24 * 60 * 60 * 1000);
+
+        user.subscriptionStatus = 'trial';
+        user.subscriptionExpiresAt = trialExpiresAt;
+        user.trialUsedAt = now;
+        await user.save();
+
+        res.status(200).json({
+          success: true,
+          message: 'Trial started successfully.',
+          tier: 'trial',
+          subscriptionStatus: user.subscriptionStatus,
+          subscriptionExpiresAt: user.subscriptionExpiresAt,
+          trialUsedAt: user.trialUsedAt,
+        });
+      } catch (error) {
+        console.error('Error starting trial:', error);
+        res.status(500).json({
+          success: false,
+          error: 'Internal server error while starting trial.',
+        });
       }
     });
 

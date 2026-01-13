@@ -59,6 +59,10 @@ User.init({
     type: DataTypes.STRING,
     allowNull: true,
   },
+  trialUsedAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
   originalTransactionId: {
     type: DataTypes.STRING(255),
     allowNull: true,
