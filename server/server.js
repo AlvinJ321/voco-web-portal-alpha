@@ -51,11 +51,29 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // Setup CORS
+const configuredCorsOrigins = (process.env.CORS_ORIGIN || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.CORS_ORIGIN 
-    : 'http://localhost:5173', // Allow Vite dev server in dev
-  optionsSuccessStatus: 200 // For legacy browser support
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin || origin === 'null') {
+      return callback(null, true);
+    }
+
+    if (!IS_PROD && origin === 'http://localhost:5173') {
+      return callback(null, true);
+    }
+
+    if (configuredCorsOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Not allowed by CORS'));
+  },
+  optionsSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
 
